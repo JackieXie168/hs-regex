@@ -1,5 +1,8 @@
 /*
- * regfree - free an RE
+ * regcomp and regexec - front ends to re_ routines
+ *
+ * Mostly for implementation of backward-compatibility kludges.  Note
+ * that these routines exist ONLY in char versions.
  *
  * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
  * 
@@ -27,27 +30,54 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *
- *
- * You might think that this could be incorporated into regcomp.c, and
- * that would be a reasonable idea... except that this is a generic
- * function (with a generic name), applicable to all compiled REs
- * regardless of the size of their characters, whereas the stuff in
- * regcomp.c gets compiled once per character size.
  */
 
 #include "regguts.h"
 
 /*
- - regfree - free an RE (generic function, punts to RE-specific function)
- *
- * Ignoring invocation with NULL is a convenience.
+ - regcomp - compile regular expression
  */
-VOID
-regfree(re)
+int
+regcomp(re, str, flags)
 regex_t *re;
+CONST char *str;
+int flags;
 {
-	if (re == NULL)
-		return;
-	(*((struct fns *)re->re_fns)->free)(re);
+	size_t len;
+	int f = flags;
+
+	if (f&REG_PEND) {
+		len = re->re_endp - str;
+		f &= ~REG_PEND;
+	} else
+		len = strlen(str);
+
+	return re_comp(re, str, len, f);
+}
+
+/*
+ - regexec - execute regular expression
+ */
+int
+regexec(re, str, nmatch, pmatch, flags)
+regex_t *re;
+CONST char *str;
+size_t nmatch;
+regmatch_t pmatch[];
+int flags;
+{
+	CONST char *start;
+	size_t len;
+	int f = flags;
+
+	if (f&REG_STARTEND) {
+		start = str + pmatch[0].rm_so;
+		len = pmatch[0].rm_eo - pmatch[0].rm_so;
+		f &= ~REG_STARTEND;
+	} else {
+		start = str;
+		len = strlen(str);
+	}
+
+	return re_exec(re, start, len, nmatch, pmatch, f);
 }
