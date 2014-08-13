@@ -1,0 +1,188 @@
+深入淺出C/C++中的正規表示式函式庫——Henry Spencer's Regular Expression library
+
+正規表示式(Regular Expressions)，又被稱為regex或regexp，是一種十分簡便、靈活的文字處理工具。它可以用來精確地找出某文字中匹配某種指定規則的內容。在Unix下，grep、sed、 awk等工具都支援正規表示式，這些工具的存在，為我們日常的文字處理帶來了極大的便利。但是，有時候，我們自己寫的程式中也需要用到正規表示式來處理一些文字，這時候就需要一些正規表示式函式庫的支援了。
+
+就目前所知，在C/C++中常用的正規表示式函式庫，計有Henry Spencer's Regex Library、GNU Regex Library、Boost.Regex、PCRE 和 PCRE++等。在這五個函式庫中，後面兩個是有關聯的，其它都是各自己獨立的，是不同的實作。這裡主要是介紹 Henry Spencer's Regex Library。
+
+
+1. 甚麼是Henry Spencer正規表示式函式庫(Henry Spencer's Regex Library) ?
+Henry Spencer正規表示式函式庫是 Apache (Apache httpd-v1.x)的一部分，它提供與POSIX標準兼容的正規表示式匹配的介面。這裡是其主頁：http://www.arglist.com/regex
+
+POSIX.2 規範了 Regex (Regular Expression，字樣規則式) 的介面內容(API)，是以基於 C 語言的 Regex library 實作品，皆應遵循此介面。現行 Linux/FreeBSD 系統中，大多已安裝。「Henry Spencer's Regexp Engine」 是擷取於 Apache httpd v1.XX 原始碼中的版本(Apache httpd 到了v2.XX 以後的版本，改用 pcre！)。或者，下載 GNU Regex 。以上兩套 Regex library 之介面符合 POSIX.2 規範。
+
+	GNU Regex Library 下載點：http://www.wuzesheng.com/wp-content/uploads/2010/03/gnuregex0_13.tar.gz
+	Henry Spencer's Regex Library 下載點：http://webhd.xuite.net/_my2/@FILE?verify&6b381f27d4cc822581f156493a2aec11
+
+
+2. Henry Spencer's Regex Library所提供的介面
+
+（1）regcomp:
+	int regcomp(regex_t *preg, const char *pattern, int cflags)
+	功能:將要進行匹配的正規表示式pattern進行編譯，做匹配前的準備工作
+	參數: preg, 輸出參數，用來保存編譯後的正規表示式結果
+		  pattern, 輸入參數，傳入要進行編譯的正規表示式的字串
+		  cflags, 輸入參數，用來指定正規表示式匹配過程中的一些選項
+	返回值:編譯成功返回0，失敗返回非0的錯誤碼
+
+（2）regexec:
+	int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t pmatch[], 
+				int eflags)
+	功能:用來檢測字串string是否匹配正規表示式preg
+	參數: preg, 輸入參數，在(1)regcomp中編譯好的正規表示式規則
+		  string, 輸入參數，用來被匹配的字串
+		  nmatch, 輸入參數，用來指定pmatch參數所對應的數組的長度
+		  pmatch, 輸出參數，用來輸出在string中匹配preg的具體位置
+		  eflag, 輸入參數，用來指定正規表示式匹配過程中的一些選項
+	返回值: 如果string匹配preg所指定的規則，則返回0， 否則返回非0
+
+（3）regerror:
+	size_t regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
+	功能:用來把在regcompt和regexec中產生的錯誤碼轉化成字串形式的錯誤訊息
+	參數: errcode, 輸入參數，在regcomp或regexec調用中返回的錯誤碼
+		  preg, 輸入參數，與錯誤碼所對應的編譯過的正規表示式結構
+		  errbuf, 輸出參數，用來返回錯誤訊息的buffer，如果buffer不夠所需大小，錯誤訊息將被截斷
+		  errbuf_size, 輸入參數，返回錯誤訊息的buffer的大小 
+	返回值: 如果errbuf_size為0，那麼regerror返回錯誤訊息所需要的buffer的大小
+
+（4）regfree:
+	void regfree (regex_t *preg)
+	功能: 用來釋放由regcomp編譯時生成的preg結構所佔用的記憶體
+	參數: preg, 輸入參數，由regcomp編譯時生成的正則表達的結構指標
+	返回值: 無
+
+3. 使用Henry Spencer Regex Library的一些注意事項
+（1）regcomp與regfree必須配對使用，要不然會造成記憶體洩漏（類比malloc/free, new/delete)
+（2）regex_t結構：把字串形式的正規表示式編譯成regex_t這樣的一個結構，方便後續的匹配工作
+（3）regmatch_t結構：用來表示正規表示式中字串中匹配的位置的結構，用起始位置的偏移量來表示的
+（4）flags：用來設定匹配過程中的一些選項, 指定如何匹配，具體參見：http://www.opengroup.org/onlinepubs/007908799/xsh/regcomp.html
+（5）使用該函式庫需要包含的頭文件：sys/types.h和regex .h
+
+4. Henry Spencer's Regex Library使用範例：
+
+《範例ㄧ》
+	#include <regex .h>
+	#include <sys /types.h>
+	#include <stdio .h>
+	 
+	int main(int argc, char ** argv)
+	{
+		if (argc != 3)
+		{
+			printf("Usage: %s RegexString Text\n", argv[0]);
+			return 1;
+		}
+	 
+		const char * pRegexStr = argv[1];
+		const char * pText = argv[2];
+	 
+		regex_t oRegex;
+		int nErrCode = 0;
+		char szErrMsg[1024] = {0};
+		size_t unErrMsgLen = 0;
+	 
+		if ((nErrCode = regcomp(&oRegex, pRegexStr, 0)) == 0)
+		{
+			if ((nErrCode = regexec(&oRegex, pText, 0, NULL, 0)) == 0)
+			{
+				printf("%s matches %s\n", pText, pRegexStr);
+				regfree(&oRegex);
+				return 0;
+			}
+		}
+	 
+		unErrMsgLen = regerror(nErrCode, &oRegex, szErrMsg, sizeof(szErrMsg));
+		unErrMsgLen = unErrMsgLen < sizeof(szErrMsg) ? unErrMsgLen : sizeof(szErrMsg) - 1;
+		szErrMsg[unErrMsgLen] = '\0';
+		printf("ErrMsg: %s\n", szErrMsg);
+	 
+		regfree(&oRegex);
+		return 1;
+	}
+
+	程式測試：
+		$ gcc ex_regex.c -o ex_regex
+		$ ./ex_regex "http:\/\/www\..*\.com" "https://www.taobao.com"
+		regexec() failed to match
+		$ ./ex_regex "http:\/\/www\..*\.com" "http://www.taobao.com"
+		http://www.taobao.com matches http:\/\/www\..*\.com
+
+
+《範例二》
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <sys/types.h>
+	#include <regex.h>
+	 
+	int main() {
+		regex_t preg;
+		regmatch_t pmatch[10];
+		size_t nmatch = 10;
+		int cflags = REG_EXTENDED | REG_ICASE;
+		int i, len, rc;
+		char buf[1024], reg[256], str[256];
+	 
+		while(1) {
+			printf("Input exp: ");
+			fgets(reg, 256, stdin);
+			if(reg[0] == '\n') break;
+			strtok(reg,"\n");
+	 
+			printf("Input str: ");
+			fgets(str,256,stdin);
+			if(str[0] == '\n') break;
+			strtok(str,"\n");
+	 
+			if( regcomp(&preg, reg, cflags) != 0 ) {
+				puts("regex compile error!\n");
+				return 1;
+			}
+	 
+			rc = regexec(&preg, str, nmatch, pmatch, 0);
+			regfree(&preg);
+	 
+			if (rc != 0) {
+				printf("no match\n");
+				continue;
+			}
+	 
+			for (i = 0; i < nmatch && pmatch[i].rm_so >= 0; ++i) {
+				len = pmatch[i].rm_eo - pmatch[i].rm_so;
+				strncpy(buf, str + pmatch[i].rm_so, len);
+				buf[len] = '\0';
+				printf("sub pattern %d is %s\n", i, buf);
+			}
+		}
+	 
+		return 0;
+	}
+
+	程式測試：
+		$ ./pmatch
+		Input exp: ([0-9]+)([a-z]+)
+		Input str: 123bcxsfdas89y
+		sub pattern 0 is 123bcxsfdas
+		sub pattern 1 is 123
+		sub pattern 2 is bcxsfdas
+		Input exp:
+
+
+《範例三》
+	Please refer to regex/demo/ci_strcmp.c、regex/demo/ci_strcmp.h
+
+	程式測試：
+		$ ./ci_strcmp
+		Input exp: ^[a-z][0-9]+$
+		Input str: a123
+		ci_strcmp(a123,^[a-z][0-9]+$) = -29
+		strcmp_match(a123,^[a-z][0-9]+$) = 1
+		strcmp_regex(a123,^[a-z][0-9]+$) = 0
+		Input exp: ^[0-9][a-z]+$
+		Input str: a123
+		ci_strcmp(a123,^[0-9][a-z]+$) = -29
+		strcmp_match(a123,^[0-9][a-z]+$) = 1
+		strcmp_regex(a123,^[0-9][a-z]+$) = 1
+		Input exp:
+
+
+以上即是關於Henry Spencer's Regex Library的全部內容。

@@ -32,7 +32,7 @@ fi
 rm -f config.cache acconfig.h
 
 echo "- libtoolize."			&& \
-libtoolize --force		 		 ; \
+libtoolize --automake --force		 ; \
 [ ! -e configure.ac ] 			&& \
 echo "- autoscan."				&& \
 autoscan			 			 ; \
@@ -45,7 +45,7 @@ autoreconf -i                   && \
 echo "- autoheader."			&& \
 autoheader						&& \
 echo "- automake."				&& \
-automake --add-missing --gnu	&& \
+automake --add-missing --force-missing --gnu	&& \
 echo							&& \
 ./configure "$@"				&& exit 0
 

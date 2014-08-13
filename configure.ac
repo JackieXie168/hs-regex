@@ -38,6 +38,7 @@ AC_CHECK_FUNCS([memmove memset regcomp strchr])
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  include/Makefile
-                 demo/Makefile])
+                 demo/Makefile
+                 doc/Makefile])
 
 AC_OUTPUT

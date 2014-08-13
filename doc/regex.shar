@@ -1,0 +1,5971 @@
+#! /bin/sh
+echo 'COPYRIGHT':
+sed 's/^X//' >'COPYRIGHT' <<'!'
+XCopyright 1992, 1993, 1994, 1997 Henry Spencer.  All rights reserved.
+XThis software is not subject to any license of the American Telephone
+Xand Telegraph Company or of the Regents of the University of California.
+X
+XPermission is granted to anyone to use this software for any purpose on
+Xany computer system, and to alter it and redistribute it, subject
+Xto the following restrictions:
+X
+X1. The author is not responsible for the consequences of use of this
+X   software, no matter how awful, even if they arise from flaws in it.
+X
+X2. The origin of this software must not be misrepresented, either by
+X   explicit claim or by omission.  Since few users ever read sources,
+X   credits must appear in the documentation.
+X
+X3. Altered versions must be plainly marked as such, and must not be
+X   misrepresented as being the original software.  Since few users
+X   ever read sources, credits must appear in the documentation.
+X
+X4. This notice may not be removed or altered.
+!
+echo 'README':
+sed 's/^X//' >'README' <<'!'
+Xalpha3.8 release.
+XTue Aug 10 15:51:48 EDT 1999
+Xhenry@spsystems.net  (formerly henry@zoo.toronto.edu)
+X
+XSee WHATSNEW for change listing.
+X
+Xinstallation notes:
+X--------
+XRead the comments at the beginning of Makefile before running.
+X
+XUtils.h contains some things that just might have to be modified on
+Xsome systems, as well as a nested include (ugh) of <assert.h>.
+X
+XThe "fake" directory contains quick-and-dirty fakes for some header
+Xfiles and routines that old systems may not have.  Note also that
+X-DUSEBCOPY will make utils.h substitute bcopy() for memmove().
+X
+XAfter that, "make r" will build regcomp.o, regexec.o, regfree.o,
+Xand regerror.o (the actual routines), bundle them together into a test
+Xprogram, and run regression tests on them.  No output is good output.
+X
+X"make lib" builds just the .o files for the actual routines (when
+Xyou're happy with testing and have adjusted CFLAGS for production),
+Xand puts them together into libregex.a.  You can pick up either the
+Xlibrary or *.o ("make lib" makes sure there are no other .o files left
+Xaround to confuse things).
+X
+XMain.c, debug.c, split.c are used for regression testing but are not part
+Xof the RE routines themselves.
+X
+XRegex.h goes in /usr/include.  All other .h files are internal only.
+X--------
+!
+echo 'WHATSNEW':
+sed 's/^X//' >'WHATSNEW' <<'!'
+XNew in alpha3.8:  Bug fix for signed/unsigned mixup, found and fixed
+Xby the FreeBSD folks.
+X
+XNew in alpha3.7:  A bit of cleanup aimed at maximizing portability,
+Xpossibly at slight cost in efficiency.  "ul" suffixes and "unsigned long"
+Xno longer appear, in particular.
+X
+XNew in alpha3.6:  A couple more portability glitches fixed.
+X
+XNew in alpha3.5:  Active development of this code has been stopped --
+XI'm working on a complete reimplementation -- but folks have found some
+Xminor portability glitches and the like, hence this release to fix them.
+XOne penalty:  slightly reduced compatibility with old compilers, because
+Xthe ANSI C `unsigned long' type and `ul' constant suffix are used in a
+Xfew places (I could avoid this but it would be considerably more work).
+X
+XNew in alpha3.4:  The complex bug alluded to below has been fixed (in a
+Xslightly kludgey temporary way that may hurt efficiency a bit; this is
+Xanother "get it out the door for 4.4" release).  The tests at the end of
+Xthe tests file have accordingly been uncommented.  The primary sign of
+Xthe bug was that something like a?b matching ab matched b rather than ab.
+X(The bug was essentially specific to this exact situation, else it would
+Xhave shown up earlier.)
+X
+XNew in alpha3.3:  The definition of word boundaries has been altered
+Xslightly, to more closely match the usual programming notion that "_"
+Xis an alphabetic.  Stuff used for pre-ANSI systems is now in a subdir,
+Xand the makefile no longer alludes to it in mysterious ways.  The
+Xmakefile has generally been cleaned up some.  Fixes have been made
+X(again!) so that the regression test will run without -DREDEBUG, at
+Xthe cost of weaker checking.  A workaround for a bug in some folks'
+X<assert.h> has been added.  And some more things have been added to
+Xtests, including a couple right at the end which are commented out
+Xbecause the code currently flunks them (complex bug; fix coming).
+XPlus the usual minor cleanup.
+X
+XNew in alpha3.2:  Assorted bits of cleanup and portability improvement
+X(the development base is now a BSDI system using GCC instead of an ancient
+XSun system, and the newer compiler exposed some glitches).  Fix for a
+Xserious bug that affected REs using many [] (including REG_ICASE REs
+Xbecause of the way they are implemented), *sometimes*, depending on
+Xmemory-allocation patterns.  The header-file prototypes no longer name
+Xthe parameters, avoiding possible name conflicts.  The possibility that
+Xsome clot has defined CHAR_MIN as (say) `-128' instead of `(-128)' is
+Xnow handled gracefully.  "uchar" is no longer used as an internal type
+Xname (too many people have the same idea).  Still the same old lousy
+Xperformance, alas.
+X
+XNew in alpha3.1:  Basically nothing, this release is just a bookkeeping
+Xconvenience.  Stay tuned.
+X
+XNew in alpha3.0:  Performance is no better, alas, but some fixes have been
+Xmade and some functionality has been added.  (This is basically the "get
+Xit out the door in time for 4.4" release.)  One bug fix:  regfree() didn't
+Xfree the main internal structure (how embarrassing).  It is now possible
+Xto put NULs in either the RE or the target string, using (resp.) a new
+XREG_PEND flag and the old REG_STARTEND flag.  The REG_NOSPEC flag to
+Xregcomp() makes all characters ordinary, so you can match a literal
+Xstring easily (this will become more useful when performance improves!).
+XThere are now primitives to match beginnings and ends of words, although
+Xthe syntax is disgusting and so is the implementation.  The REG_ATOI
+Xdebugging interface has changed a bit.  And there has been considerable
+Xinternal cleanup of various kinds.
+X
+XNew in alpha2.3:  Split change list out of README, and moved flags notes
+Xinto Makefile.  Macro-ized the name of regex(7) in regex(3), since it has
+Xto change for 4.4BSD.  Cleanup work in engine.c, and some new regression
+Xtests to catch tricky cases thereof.
+X
+XNew in alpha2.2:  Out-of-date manpages updated.  Regerror() acquires two
+Xsmall extensions -- REG_ITOA and REG_ATOI -- which avoid debugging kludges
+Xin my own test program and might be useful to others for similar purposes.
+XThe regression test will now compile (and run) without REDEBUG.  The
+XBRE \$ bug is fixed.  Most uses of "uchar" are gone; it's all chars now.
+XChar/uchar parameters are now written int/unsigned, to avoid possible
+Xportability problems with unpromoted parameters.  Some unsigned casts have
+Xbeen introduced to minimize portability problems with shifting into sign
+Xbits.
+X
+XNew in alpha2.1:  Lots of little stuff, cleanup and fixes.  The one big
+Xthing is that regex.h is now generated, using mkh, rather than being
+Xsupplied in the distribution; due to circularities in dependencies,
+Xyou have to build regex.h explicitly by "make h".  The two known bugs
+Xhave been fixed (and the regression test now checks for them), as has a
+Xproblem with assertions not being suppressed in the absence of REDEBUG.
+XNo performance work yet.
+X
+XNew in alpha2:  Backslash-anything is an ordinary character, not an
+Xerror (except, of course, for the handful of backslashed metacharacters
+Xin BREs), which should reduce script breakage.  The regression test
+Xchecks *where* null strings are supposed to match, and has generally
+Xbeen tightened up somewhat.  Small bug fixes in parameter passing (not
+Xharmful, but technically errors) and some other areas.  Debugging
+Xinvoked by defining REDEBUG rather than not defining NDEBUG.
+X
+XNew in alpha+3:  full prototyping for internal routines, using a little
+Xhelper program, mkh, which extracts prototypes given in stylized comments.
+XMore minor cleanup.  Buglet fix:  it's CHAR_BIT, not CHAR_BITS.  Simple
+Xpre-screening of input when a literal string is known to be part of the
+XRE; this does wonders for performance.
+X
+XNew in alpha+2:  minor bits of cleanup.  Notably, the number "32" for the
+Xword width isn't hardwired into regexec.c any more, the public header
+Xfile prototypes the functions if __STDC__ is defined, and some small typos
+Xin the manpages have been fixed.
+X
+XNew in alpha+1:  improvements to the manual pages, and an important
+Xextension, the REG_STARTEND option to regexec().
+!
+# Makefile generated from mf.tmp
+echo 'Makefile':
+sed 's/^X//' >'Makefile' <<'!'
+X# You probably want to take -DREDEBUG out of CFLAGS, and put something like
+X# -O in, *after* testing (-DREDEBUG strengthens testing by enabling a lot of
+X# internal assertion checking and some debugging facilities).
+X# Put -Dconst= in for a pre-ANSI compiler.
+X# Do not take -DPOSIX_MISTAKE out.
+X# REGCFLAGS isn't important to you (it's for my use in some special contexts).
+XCFLAGS=-I. -DPOSIX_MISTAKE -DREDEBUG $(REGCFLAGS)
+X
+X# If you have a pre-ANSI compiler, put -o into MKHFLAGS.  If you want
+X# the Berkeley __P macro, put -b in.
+XMKHFLAGS=
+X
+X# Flags for linking but not compiling, if any.
+XLDFLAGS=
+X
+X# Extra libraries for linking, if any.
+XLIBS=
+X
+X# Internal stuff, should not need changing.
+XOBJPRODN=regcomp.o regexec.o regerror.o regfree.o
+XOBJS=$(OBJPRODN) split.o debug.o main.o
+XH=cclass.h cname.h regex2.h utils.h
+XREGSRC=regcomp.c regerror.c regexec.c regfree.c
+XALLSRC=$(REGSRC) engine.c debug.c main.c split.c
+X
+X# Stuff that matters only if you're trying to lint the package.
+XLINTFLAGS=-I. -Dstatic= -Dconst= -DREDEBUG
+XLINTC=regcomp.c regexec.c regerror.c regfree.c debug.c main.c
+XJUNKLINT=possible pointer alignment|null effect
+X
+X# arrangements to build forward-reference header files
+X.SUFFIXES:	.ih .h
+X.c.ih:
+X	sh ./mkh $(MKHFLAGS) -p $< >$@
+X
+Xdefault:	r
+X
+Xlib:	purge $(OBJPRODN)
+X	rm -f libregex.a
+X	ar crv libregex.a $(OBJPRODN)
+X
+Xpurge:
+X	rm -f *.o
+X
+X# stuff to build regex.h
+XREGEXH=regex.h
+XREGEXHSRC=regex2.h $(REGSRC)
+X$(REGEXH):	$(REGEXHSRC) mkh
+X	sh ./mkh $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) >regex.tmp
+X	cmp -s regex.tmp regex.h 2>/dev/null || cp regex.tmp regex.h
+X	rm -f regex.tmp
+X
+X# dependencies
+X$(OBJPRODN) debug.o:	utils.h regex.h regex2.h
+Xregcomp.o:	cclass.h cname.h regcomp.ih
+Xregexec.o:	engine.c engine.ih
+Xregerror.o:	regerror.ih
+Xdebug.o:	debug.ih
+Xmain.o:	main.ih
+X
+X# tester
+Xre:	$(OBJS)
+X	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+X
+X# regression test
+Xr:	re tests
+X	./re <tests
+X	./re -el <tests
+X	./re -er <tests
+X
+X# 57 variants, and other stuff, for development use -- not useful to you
+Xra:	./re tests
+X	-./re <tests
+X	-./re -el <tests
+X	-./re -er <tests
+X
+Xrx:	./re tests
+X	./re -x <tests
+X	./re -x -el <tests
+X	./re -x -er <tests
+X
+Xt:	./re tests
+X	-time ./re <tests
+X	-time ./re -cs <tests
+X	-time ./re -el <tests
+X	-time ./re -cs -el <tests
+X
+Xl:	$(LINTC)
+X	lint $(LINTFLAGS) -h $(LINTC) 2>&1 | egrep -v '$(JUNKLINT)' | tee lint
+X
+Xfullprint:
+X	ti README WHATSNEW notes todo | list
+X	ti *.h | list
+X	list *.c
+X	list regex.3 regex.7
+X
+Xprint:
+X	ti README WHATSNEW notes todo | list
+X	ti *.h | list
+X	list reg*.c engine.c
+X
+X
+Xmf.tmp:	Makefile
+X	sed '/^REGEXH=/s/=.*/=regex.h/' Makefile | sed '/#DEL$$/d' >$@
+X
+XDTRH=cclass.h cname.h regex2.h utils.h
+XPRE=COPYRIGHT README WHATSNEW
+XPOST=mkh regex.3 regex.7 tests $(DTRH) $(ALLSRC) fake/*.[ch]
+XFILES=$(PRE) Makefile $(POST)
+XDTR=$(PRE) Makefile=mf.tmp $(POST)
+Xdtr:	$(FILES) mf.tmp
+X	makedtr $(DTR) >$@
+X	rm mf.tmp
+X
+Xcio:	$(FILES)
+X	cio $(FILES)
+X
+Xrdf:	$(FILES)
+X	rcsdiff -c $(FILES) 2>&1 | p
+X
+X# various forms of cleanup
+Xtidy:
+X	rm -f junk* core core.* *.core dtr *.tmp lint
+X
+Xclean:	tidy
+X	rm -f *.o *.s *.ih re libregex.a
+X
+X# don't do this one unless you know what you're doing
+Xspotless:	clean
+X	rm -f mkh regex.h
+!
+echo 'mkh':
+sed 's/^X//' >'mkh' <<'!'
+X#! /bin/sh
+X# mkh - pull headers out of C source
+XPATH=/bin:/usr/bin ; export PATH
+X
+X# egrep pattern to pick out marked lines
+Xegrep='^ =([ 	]|$)'
+X
+X# Sed program to process marked lines into lines for the header file.
+X# The markers have already been removed.  Two things are done here:  removal
+X# of backslashed newlines, and some fudging of comments.  The first is done
+X# because -o needs to have prototypes on one line to strip them down.
+X# Getting comments into the output is tricky; we turn C++-style // comments
+X# into /* */ comments, after altering any existing */'s to avoid trouble.
+Xpeel='	/\\$/N
+X	/\\\n[ 	]*/s///g
+X	/\/\//s;\*/;* /;g
+X	/\/\//s;//\(.*\);/*\1 */;'
+X
+Xfor a
+Xdo
+X	case "$a" in
+X	-o)	# old (pre-function-prototype) compiler
+X		# add code to comment out argument lists
+X		peel="$peel
+X			"'/^\([^#\/][^\/]*[a-zA-Z0-9_)]\)(\(.*\))/s;;\1(/*\2*/);'
+X		shift
+X		;;
+X	-b)	# funny Berkeley __P macro
+X		peel="$peel
+X			"'/^\([^#\/][^\/]*[a-zA-Z0-9_)]\)(\(.*\))/s;;\1 __P((\2));'
+X		shift
+X		;;
+X	-s)	# compiler doesn't like `static foo();'
+X		# add code to get rid of the `static'
+X		peel="$peel
+X			"'/^static[ 	][^\/]*[a-zA-Z0-9_)](.*)/s;static.;;'
+X		shift
+X		;;
+X	-p)	# private declarations
+X		egrep='^ ==([ 	]|$)'
+X		shift
+X		;;
+X	-i)	# wrap in #ifndef, argument is name
+X		ifndef="$2"
+X		shift ; shift
+X		;;
+X	*)	break
+X		;;
+X	esac
+Xdone
+X
+Xif test " $ifndef" != " "
+Xthen
+X	echo "#ifndef $ifndef"
+X	echo "#define	$ifndef	/* never again */"
+Xfi
+Xecho "/* ========= begin header generated by $0 ========= */"
+Xecho '#ifdef __cplusplus'
+Xecho 'extern "C" {'
+Xecho '#endif'
+Xfor f
+Xdo
+X	echo
+X	echo "/* === $f === */"
+X	egrep "$egrep" $f | sed 's/^ ==*[ 	]//;s/^ ==*$//' | sed "$peel"
+X	echo
+Xdone
+Xecho '#ifdef __cplusplus'
+Xecho '}'
+Xecho '#endif'
+Xecho "/* ========= end header generated by $0 ========= */"
+Xif test " $ifndef" != " "
+Xthen
+X	echo "#endif"
+Xfi
+Xexit 0
+!
+echo 'regex.3':
+sed 's/^X//' >'regex.3' <<'!'
+X.TH REGEX 3 "25 Sept 1997"
+X.BY "Henry Spencer"
+X.de ZR
+X.\" one other place knows this name:  the SEE ALSO section
+X.IR regex (7) \\$1
+X..
+X.SH NAME
+Xregcomp, regexec, regerror, regfree \- regular-expression library
+X.SH SYNOPSIS
+X.ft B
+X.\".na
+X#include <sys/types.h>
+X.br
+X#include <regex.h>
+X.HP 10
+Xint regcomp(regex_t\ *preg, const\ char\ *pattern, int\ cflags);
+X.HP
+Xint\ regexec(const\ regex_t\ *preg, const\ char\ *string,
+Xsize_t\ nmatch, regmatch_t\ pmatch[], int\ eflags);
+X.HP
+Xsize_t\ regerror(int\ errcode, const\ regex_t\ *preg,
+Xchar\ *errbuf, size_t\ errbuf_size);
+X.HP
+Xvoid\ regfree(regex_t\ *preg);
+X.\".ad
+X.ft
+X.SH DESCRIPTION
+XThese routines implement POSIX 1003.2 regular expressions (``RE''s);
+Xsee
+X.ZR .
+X.I Regcomp
+Xcompiles an RE written as a string into an internal form,
+X.I regexec
+Xmatches that internal form against a string and reports results,
+X.I regerror
+Xtransforms error codes from either into human-readable messages,
+Xand
+X.I regfree
+Xfrees any dynamically-allocated storage used by the internal form
+Xof an RE.
+X.PP
+XThe header
+X.I <regex.h>
+Xdeclares two structure types,
+X.I regex_t
+Xand
+X.IR regmatch_t ,
+Xthe former for compiled internal forms and the latter for match reporting.
+XIt also declares the four functions,
+Xa type
+X.IR regoff_t ,
+Xand a number of constants with names starting with ``REG_''.
+X.PP
+X.I Regcomp
+Xcompiles the regular expression contained in the
+X.I pattern
+Xstring,
+Xsubject to the flags in
+X.IR cflags ,
+Xand places the results in the
+X.I regex_t
+Xstructure pointed to by
+X.IR preg .
+X.I Cflags
+Xis the bitwise OR of zero or more of the following flags:
+X.IP REG_EXTENDED \w'REG_EXTENDED'u+2n
+XCompile modern (``extended'') REs,
+Xrather than the obsolete (``basic'') REs that
+Xare the default.
+X.IP REG_BASIC
+XThis is a synonym for 0,
+Xprovided as a counterpart to REG_EXTENDED to improve readability.
+XThis is an extension,
+Xcompatible with but not specified by POSIX 1003.2,
+Xand should be used with
+Xcaution in software intended to be portable to other systems.
+X.IP REG_NOSPEC
+XCompile with recognition of all special characters turned off.
+XAll characters are thus considered ordinary,
+Xso the ``RE'' is a literal string.
+XThis is an extension,
+Xcompatible with but not specified by POSIX 1003.2,
+Xand should be used with
+Xcaution in software intended to be portable to other systems.
+XREG_EXTENDED and REG_NOSPEC may not be used
+Xin the same call to
+X.IR regcomp .
+X.IP REG_ICASE
+XCompile for matching that ignores upper/lower case distinctions.
+XSee
+X.ZR .
+X.IP REG_NOSUB
+XCompile for matching that need only report success or failure,
+Xnot what was matched.
+X.IP REG_NEWLINE
+XCompile for newline-sensitive matching.
+XBy default, newline is a completely ordinary character with no special
+Xmeaning in either REs or strings.
+XWith this flag,
+X`[^' bracket expressions and `.' never match newline,
+Xa `^' anchor matches the null string after any newline in the string
+Xin addition to its normal function,
+Xand the `$' anchor matches the null string before any newline in the
+Xstring in addition to its normal function.
+X.IP REG_PEND
+XThe regular expression ends,
+Xnot at the first NUL,
+Xbut just before the character pointed to by the
+X.I re_endp
+Xmember of the structure pointed to by
+X.IR preg .
+XThe
+X.I re_endp
+Xmember is of type
+X.IR const\ char\ * .
+XThis flag permits inclusion of NULs in the RE;
+Xthey are considered ordinary characters.
+XThis is an extension,
+Xcompatible with but not specified by POSIX 1003.2,
+Xand should be used with
+Xcaution in software intended to be portable to other systems.
+X.PP
+XWhen successful,
+X.I regcomp
+Xreturns 0 and fills in the structure pointed to by
+X.IR preg .
+XOne member of that structure
+X(other than
+X.IR re_endp )
+Xis publicized:
+X.IR re_nsub ,
+Xof type
+X.IR size_t ,
+Xcontains the number of parenthesized subexpressions within the RE
+X(except that the value of this member is undefined if the
+XREG_NOSUB flag was used).
+XIf
+X.I regcomp
+Xfails, it returns a non-zero error code;
+Xsee DIAGNOSTICS.
+X.PP
+X.I Regexec
+Xmatches the compiled RE pointed to by
+X.I preg
+Xagainst the
+X.IR string ,
+Xsubject to the flags in
+X.IR eflags ,
+Xand reports results using
+X.IR nmatch ,
+X.IR pmatch ,
+Xand the returned value.
+XThe RE must have been compiled by a previous invocation of
+X.IR regcomp .
+XThe compiled form is not altered during execution of
+X.IR regexec ,
+Xso a single compiled RE can be used simultaneously by multiple threads.
+X.PP
+XBy default,
+Xthe NUL-terminated string pointed to by
+X.I string
+Xis considered to be the text of an entire line,
+Xwith the NUL indicating the end of the line.
+X(That is,
+Xany other end-of-line marker is considered to have been removed
+Xand replaced by the NUL.)
+XThe
+X.I eflags
+Xargument is the bitwise OR of zero or more of the following flags:
+X.IP REG_NOTBOL \w'REG_STARTEND'u+2n
+XThe first character of
+Xthe string
+Xis not the beginning of a line, so the `^' anchor should not match before it.
+XThis does not affect the behavior of newlines under REG_NEWLINE.
+X.IP REG_NOTEOL
+XThe NUL terminating
+Xthe string
+Xdoes not end a line, so the `$' anchor should not match before it.
+XThis does not affect the behavior of newlines under REG_NEWLINE.
+X.IP REG_STARTEND
+XThe string is considered to start at
+X\fIstring\fR\ + \fIpmatch\fR[0].\fIrm_so\fR
+Xand to have a terminating NUL located at
+X\fIstring\fR\ + \fIpmatch\fR[0].\fIrm_eo\fR
+X(there need not actually be a NUL at that location),
+Xregardless of the value of
+X.IR nmatch .
+XSee below for the definition of
+X.IR pmatch
+Xand
+X.IR nmatch .
+XThis is an extension,
+Xcompatible with but not specified by POSIX 1003.2,
+Xand should be used with
+Xcaution in software intended to be portable to other systems.
+XNote that a non-zero \fIrm_so\fR does not imply REG_NOTBOL;
+XREG_STARTEND affects only the location of the string,
+Xnot how it is matched.
+X.PP
+XSee
+X.ZR
+Xfor a discussion of what is matched in situations where an RE or a
+Xportion thereof could match any of several substrings of
+X.IR string .
+X.PP
+XNormally,
+X.I regexec
+Xreturns 0 for success and the non-zero code REG_NOMATCH for failure.
+XOther non-zero error codes may be returned in exceptional situations;
+Xsee DIAGNOSTICS.
+X.PP
+XIf REG_NOSUB was specified in the compilation of the RE,
+Xor if
+X.I nmatch
+Xis 0,
+X.I regexec
+Xignores the
+X.I pmatch
+Xargument (but see below for the case where REG_STARTEND is specified).
+XOtherwise,
+X.I pmatch
+Xpoints to an array of
+X.I nmatch
+Xstructures of type
+X.IR regmatch_t .
+XSuch a structure has at least the members
+X.I rm_so
+Xand
+X.IR rm_eo ,
+Xboth of type
+X.I regoff_t
+X(a signed arithmetic type at least as large as an
+X.I off_t
+Xand a
+X.IR ssize_t ),
+Xcontaining respectively the offset of the first character of a substring
+Xand the offset of the first character after the end of the substring.
+XOffsets are measured from the beginning of the
+X.I string
+Xargument given to
+X.IR regexec .
+XAn empty substring is denoted by equal offsets,
+Xboth indicating the character following the empty substring.
+X.PP
+XThe 0th member of the
+X.I pmatch
+Xarray is filled in to indicate what substring of
+X.I string
+Xwas matched by the entire RE.
+XRemaining members report what substring was matched by parenthesized
+Xsubexpressions within the RE;
+Xmember
+X.I i
+Xreports subexpression
+X.IR i ,
+Xwith subexpressions counted (starting at 1) by the order of their opening
+Xparentheses in the RE, left to right.
+XUnused entries in the array\(emcorresponding either to subexpressions that
+Xdid not participate in the match at all, or to subexpressions that do not
+Xexist in the RE (that is, \fIi\fR\ > \fIpreg\fR\->\fIre_nsub\fR)\(emhave both
+X.I rm_so
+Xand
+X.I rm_eo
+Xset to \-1.
+XIf a subexpression participated in the match several times,
+Xthe reported substring is the last one it matched.
+X(Note, as an example in particular, that when the RE `(b*)+' matches `bbb',
+Xthe parenthesized subexpression matches the three `b's and then
+Xan infinite number of empty strings following the last `b',
+Xso the reported substring is one of the empties.)
+X.PP
+XIf REG_STARTEND is specified,
+X.I pmatch
+Xmust point to at least one
+X.I regmatch_t
+X(even if
+X.I nmatch
+Xis 0 or REG_NOSUB was specified),
+Xto hold the input offsets for REG_STARTEND.
+XUse for output is still entirely controlled by
+X.IR nmatch ;
+Xif
+X.I nmatch
+Xis 0 or REG_NOSUB was specified,
+Xthe value of
+X.IR pmatch [0]
+Xwill not be changed by a successful
+X.IR regexec .
+X.PP
+X.I Regerror
+Xmaps a non-zero
+X.I errcode
+Xfrom either
+X.I regcomp
+Xor
+X.I regexec
+Xto a human-readable, printable message.
+XIf
+X.I preg
+Xis non-NULL,
+Xthe error code should have arisen from use of
+Xthe
+X.I regex_t
+Xpointed to by
+X.IR preg ,
+Xand if the error code came from
+X.IR regcomp ,
+Xit should have been the result from the most recent
+X.I regcomp
+Xusing that
+X.IR regex_t .
+X.RI ( Regerror
+Xmay be able to supply a more detailed message using information
+Xfrom the
+X.IR regex_t .)
+X.I Regerror
+Xplaces the NUL-terminated message into the buffer pointed to by
+X.IR errbuf ,
+Xlimiting the length (including the NUL) to at most
+X.I errbuf_size
+Xbytes.
+XIf the whole message won't fit,
+Xas much of it as will fit before the terminating NUL is supplied.
+XIn any case,
+Xthe returned value is the size of buffer needed to hold the whole
+Xmessage (including terminating NUL).
+XIf
+X.I errbuf_size
+Xis 0,
+X.I errbuf
+Xis ignored but the return value is still correct.
+X.PP
+XIf the
+X.I errcode
+Xgiven to
+X.I regerror
+Xis first ORed with REG_ITOA,
+Xthe ``message'' that results is the printable name of the error code,
+Xe.g. ``REG_NOMATCH'',
+Xrather than an explanation thereof.
+XIf
+X.I errcode
+Xis REG_ATOI,
+Xthen
+X.I preg
+Xshall be non-NULL and the
+X.I re_endp
+Xmember of the structure it points to
+Xmust point to the printable name of an error code;
+Xin this case, the result in
+X.I errbuf
+Xis the decimal digits of
+Xthe numeric value of the error code
+X(0 if the name is not recognized).
+XREG_ITOA and REG_ATOI are intended primarily as debugging facilities;
+Xthey are extensions,
+Xcompatible with but not specified by POSIX 1003.2,
+Xand should be used with
+Xcaution in software intended to be portable to other systems.
+XBe warned also that they are considered experimental and changes are possible.
+X.PP
+X.I Regfree
+Xfrees any dynamically-allocated storage associated with the compiled RE
+Xpointed to by
+X.IR preg .
+XThe remaining
+X.I regex_t
+Xis no longer a valid compiled RE
+Xand the effect of supplying it to
+X.I regexec
+Xor
+X.I regerror
+Xis undefined.
+X.PP
+XNone of these functions references global variables except for tables
+Xof constants;
+Xall are safe for use from multiple threads if the arguments are safe.
+X.SH IMPLEMENTATION CHOICES
+XThere are a number of decisions that 1003.2 leaves up to the implementor,
+Xeither by explicitly saying ``undefined'' or by virtue of them being
+Xforbidden by the RE grammar.
+XThis implementation treats them as follows.
+X.PP
+XSee
+X.ZR
+Xfor a discussion of the definition of case-independent matching.
+X.PP
+XThere is no particular limit on the length of REs,
+Xexcept insofar as memory is limited.
+XMemory usage is approximately linear in RE size, and largely insensitive
+Xto RE complexity, except for bounded repetitions.
+XSee BUGS for one short RE using them
+Xthat will run almost any system out of memory.
+X.PP
+XA backslashed character other than one specifically given a magic meaning
+Xby 1003.2 (such magic meanings occur only in obsolete [``basic''] REs)
+Xis taken as an ordinary character.
+X.PP
+XAny unmatched [ is a REG_EBRACK error.
+X.PP
+XEquivalence classes cannot begin or end bracket-expression ranges.
+XThe endpoint of one range cannot begin another.
+X.PP
+XRE_DUP_MAX, the limit on repetition counts in bounded repetitions, is 255.
+X.PP
+XA repetition operator (?, *, +, or bounds) cannot follow another
+Xrepetition operator.
+XA repetition operator cannot begin an expression or subexpression
+Xor follow `^' or `|'.
+X.PP
+X`|' cannot appear first or last in a (sub)expression or after another `|',
+Xi.e. an operand of `|' cannot be an empty subexpression.
+XAn empty parenthesized subexpression, `()', is legal and matches an
+Xempty (sub)string.
+XAn empty string is not a legal RE.
+X.PP
+XA `{' followed by a digit is considered the beginning of bounds for a
+Xbounded repetition, which must then follow the syntax for bounds.
+XA `{' \fInot\fR followed by a digit is considered an ordinary character.
+X.PP
+X`^' and `$' beginning and ending subexpressions in obsolete (``basic'')
+XREs are anchors, not ordinary characters.
+X.SH SEE ALSO
+Xgrep(1), regex(7)
+X.PP
+XPOSIX 1003.2, sections 2.8 (Regular Expression Notation)
+Xand
+XB.5 (C Binding for Regular Expression Matching).
+X.SH DIAGNOSTICS
+XNon-zero error codes from
+X.I regcomp
+Xand
+X.I regexec
+Xinclude the following:
+X.PP
+X.nf
+X.ta \w'REG_ECOLLATE'u+3n
+XREG_NOMATCH	regexec() failed to match
+XREG_BADPAT	invalid regular expression
+XREG_ECOLLATE	invalid collating element
+XREG_ECTYPE	invalid character class
+XREG_EESCAPE	\e applied to unescapable character
+XREG_ESUBREG	invalid backreference number
+XREG_EBRACK	brackets [ ] not balanced
+XREG_EPAREN	parentheses ( ) not balanced
+XREG_EBRACE	braces { } not balanced
+XREG_BADBR	invalid repetition count(s) in { }
+XREG_ERANGE	invalid character range in [ ]
+XREG_ESPACE	ran out of memory
+XREG_BADRPT	?, *, or + operand invalid
+XREG_EMPTY	empty (sub)expression
+XREG_ASSERT	``can't happen''\(emyou found a bug
+XREG_INVARG	invalid argument, e.g. negative-length string
+X.fi
+X.SH HISTORY
+XWritten by Henry Spencer,
+Xhenry@zoo.toronto.edu.
+X.SH BUGS
+XThis is an alpha release with known defects.
+XPlease report problems.
+X.PP
+XThere is one known functionality bug.
+XThe implementation of internationalization is incomplete:
+Xthe locale is always assumed to be the default one of 1003.2,
+Xand only the collating elements etc. of that locale are available.
+X.PP
+XThe back-reference code is subtle and doubts linger about its correctness
+Xin complex cases.
+X.PP
+X.I Regexec
+Xperformance is poor.
+XThis will improve with later releases.
+X.I Nmatch
+Xexceeding 0 is expensive;
+X.I nmatch
+Xexceeding 1 is worse.
+X.I Regexec
+Xis largely insensitive to RE complexity \fIexcept\fR that back
+Xreferences are massively expensive.
+XRE length does matter; in particular, there is a strong speed bonus
+Xfor keeping RE length under about 30 characters,
+Xwith most special characters counting roughly double.
+X.PP
+X.I Regcomp
+Ximplements bounded repetitions by macro expansion,
+Xwhich is costly in time and space if counts are large
+Xor bounded repetitions are nested.
+XAn RE like, say,
+X`((((a{1,100}){1,100}){1,100}){1,100}){1,100}'
+Xwill (eventually) run almost any existing machine out of swap space.
+X.PP
+XThere are suspected problems with response to obscure error conditions.
+XNotably,
+Xcertain kinds of internal overflow,
+Xproduced only by truly enormous REs or by multiply nested bounded repetitions,
+Xare probably not handled well.
+X.PP
+XDue to a mistake in 1003.2, things like `a)b' are legal REs because `)' is
+Xa special character only in the presence of a previous unmatched `('.
+XThis can't be fixed until the spec is fixed.
+X.PP
+XThe standard's definition of back references is vague.
+XFor example, does
+X`a\e(\e(b\e)*\e2\e)*d' match `abbbd'?
+XUntil the standard is clarified,
+Xbehavior in such cases should not be relied on.
+X.PP
+XThe implementation of word-boundary matching is a bit of a kludge,
+Xand bugs may lurk in combinations of word-boundary matching and anchoring.
+!
+echo 'regex.7':
+sed 's/^X//' >'regex.7' <<'!'
+X.TH REGEX 7 "25 Oct 1995"
+X.BY "Henry Spencer"
+X.SH NAME
+Xregex \- POSIX 1003.2 regular expressions
+X.SH DESCRIPTION
+XRegular expressions (``RE''s),
+Xas defined in POSIX 1003.2, come in two forms:
+Xmodern REs (roughly those of
+X.IR egrep ;
+X1003.2 calls these ``extended'' REs)
+Xand obsolete REs (roughly those of
+X.IR ed ;
+X1003.2 ``basic'' REs).
+XObsolete REs mostly exist for backward compatibility in some old programs;
+Xthey will be discussed at the end.
+X1003.2 leaves some aspects of RE syntax and semantics open;
+X`\(dg' marks decisions on these aspects that
+Xmay not be fully portable to other 1003.2 implementations.
+X.PP
+XA (modern) RE is one\(dg or more non-empty\(dg \fIbranches\fR,
+Xseparated by `|'.
+XIt matches anything that matches one of the branches.
+X.PP
+XA branch is one\(dg or more \fIpieces\fR, concatenated.
+XIt matches a match for the first, followed by a match for the second, etc.
+X.PP
+XA piece is an \fIatom\fR possibly followed
+Xby a single\(dg `*', `+', `?', or \fIbound\fR.
+XAn atom followed by `*' matches a sequence of 0 or more matches of the atom.
+XAn atom followed by `+' matches a sequence of 1 or more matches of the atom.
+XAn atom followed by `?' matches a sequence of 0 or 1 matches of the atom.
+X.PP
+XA \fIbound\fR is `{' followed by an unsigned decimal integer,
+Xpossibly followed by `,'
+Xpossibly followed by another unsigned decimal integer,
+Xalways followed by `}'.
+XThe integers must lie between 0 and RE_DUP_MAX (255\(dg) inclusive,
+Xand if there are two of them, the first may not exceed the second.
+XAn atom followed by a bound containing one integer \fIi\fR
+Xand no comma matches
+Xa sequence of exactly \fIi\fR matches of the atom.
+XAn atom followed by a bound
+Xcontaining one integer \fIi\fR and a comma matches
+Xa sequence of \fIi\fR or more matches of the atom.
+XAn atom followed by a bound
+Xcontaining two integers \fIi\fR and \fIj\fR matches
+Xa sequence of \fIi\fR through \fIj\fR (inclusive) matches of the atom.
+X.PP
+XAn atom is a regular expression enclosed in `()' (matching a match for the
+Xregular expression),
+Xan empty set of `()' (matching the null string)\(dg,
+Xa \fIbracket expression\fR (see below), `.'
+X(matching any single character), `^' (matching the null string at the
+Xbeginning of a line), `$' (matching the null string at the
+Xend of a line), a `\e' followed by one of the characters
+X`^.[$()|*+?{\e'
+X(matching that character taken as an ordinary character),
+Xa `\e' followed by any other character\(dg
+X(matching that character taken as an ordinary character,
+Xas if the `\e' had not been present\(dg),
+Xor a single character with no other significance (matching that character).
+XA `{' followed by a character other than a digit is an ordinary
+Xcharacter, not the beginning of a bound\(dg.
+XIt is illegal to end an RE with `\e'.
+X.PP
+XA \fIbracket expression\fR is a list of characters enclosed in `[]'.
+XIt normally matches any single character from the list (but see below).
+XIf the list begins with `^',
+Xit matches any single character
+X(but see below) \fInot\fR from the rest of the list.
+XIf two characters in the list are separated by `\-', this is shorthand
+Xfor the full \fIrange\fR of characters between those two (inclusive) in the
+Xcollating sequence,
+Xe.g. `[0\-9]' in ASCII matches any decimal digit.
+XIt is illegal\(dg for two ranges to share an
+Xendpoint, e.g. `a\-c\-e'.
+XRanges are very collating-sequence-dependent,
+Xand portable programs should avoid relying on them.
+X.PP
+XTo include a literal `]' in the list, make it the first character
+X(following a possible `^').
+XTo include a literal `\-', make it the first or last character,
+Xor the second endpoint of a range.
+XTo use a literal `\-' as the first endpoint of a range,
+Xenclose it in `[.' and `.]' to make it a collating element (see below).
+XWith the exception of these and some combinations using `[' (see next
+Xparagraphs), all other special characters, including `\e', lose their
+Xspecial significance within a bracket expression.
+X.PP
+XWithin a bracket expression, a collating element (a character,
+Xa multi-character sequence that collates as if it were a single character,
+Xor a collating-sequence name for either)
+Xenclosed in `[.' and `.]' stands for the
+Xsequence of characters of that collating element.
+XThe sequence is a single element of the bracket expression's list.
+XA bracket expression containing a multi-character collating element 
+Xcan thus match more than one character,
+Xe.g. if the collating sequence includes a `ch' collating element,
+Xthen the RE `[[.ch.]]*c' matches the first five characters
+Xof `chchcc'.
+X.PP
+XWithin a bracket expression, a collating element enclosed in `[=' and
+X`=]' is an equivalence class, standing for the sequences of characters
+Xof all collating elements equivalent to that one, including itself.
+X(If there are no other equivalent collating elements,
+Xthe treatment is as if the enclosing delimiters were `[.' and `.]'.)
+XFor example, if o and \o'o^' are the members of an equivalence class,
+Xthen `[[=o=]]', `[[=\o'o^'=]]', and `[o\o'o^']' are all synonymous.
+XAn equivalence class may not\(dg be an endpoint
+Xof a range.
+X.PP
+XWithin a bracket expression, the name of a \fIcharacter class\fR enclosed
+Xin `[:' and `:]' stands for the list of all characters belonging to that
+Xclass.
+XStandard character class names are:
+X.PP
+X.RS
+X.nf
+X.ta 3c 6c 9c
+Xalnum	digit	punct
+Xalpha	graph	space
+Xblank	lower	upper
+Xcntrl	print	xdigit
+X.fi
+X.RE
+X.PP
+XThese stand for the character classes defined in
+X.IR ctype (3).
+XA locale may provide others.
+XA character class may not be used as an endpoint of a range.
+X.PP
+XThere are two special cases\(dg of bracket expressions:
+Xthe bracket expressions `[[:<:]]' and `[[:>:]]' match the null string at
+Xthe beginning and end of a word respectively.
+XA word is defined as a sequence of
+Xword characters
+Xwhich is neither preceded nor followed by
+Xword characters.
+XA word character is an
+X.I alnum
+Xcharacter (as defined by
+X.IR ctype (3))
+Xor an underscore.
+XThis is an extension,
+Xcompatible with but not specified by POSIX 1003.2,
+Xand should be used with
+Xcaution in software intended to be portable to other systems.
+X.PP
+XIn the event that an RE could match more than one substring of a given
+Xstring,
+Xthe RE matches the one starting earliest in the string.
+XIf the RE could match more than one substring starting at that point,
+Xit matches the longest.
+XSubexpressions also match the longest possible substrings, subject to
+Xthe constraint that the whole match be as long as possible,
+Xwith subexpressions starting earlier in the RE taking priority over
+Xones starting later.
+XNote that higher-level subexpressions thus take priority over
+Xtheir lower-level component subexpressions.
+X.PP
+XMatch lengths are measured in characters, not collating elements.
+XA null string is considered longer than no match at all.
+XFor example,
+X`bb*' matches the three middle characters of `abbbc',
+X`(wee|week)(knights|nights)' matches all ten characters of `weeknights',
+Xwhen `(.*).*' is matched against `abc' the parenthesized subexpression
+Xmatches all three characters, and
+Xwhen `(a*)*' is matched against `bc' both the whole RE and the parenthesized
+Xsubexpression match the null string.
+X.PP
+XIf case-independent matching is specified,
+Xthe effect is much as if all case distinctions had vanished from the
+Xalphabet.
+XWhen an alphabetic that exists in multiple cases appears as an
+Xordinary character outside a bracket expression, it is effectively
+Xtransformed into a bracket expression containing both cases,
+Xe.g. `x' becomes `[xX]'.
+XWhen it appears inside a bracket expression, all case counterparts
+Xof it are added to the bracket expression, so that (e.g.) `[x]'
+Xbecomes `[xX]' and `[^x]' becomes `[^xX]'.
+X.PP
+XNo particular limit is imposed on the length of REs\(dg.
+XPrograms intended to be portable should not employ REs longer
+Xthan 256 bytes,
+Xas an implementation can refuse to accept such REs and remain
+XPOSIX-compliant.
+X.PP
+XObsolete (``basic'') regular expressions differ in several respects.
+X`|', `+', and `?' are ordinary characters and there is no equivalent
+Xfor their functionality.
+XThe delimiters for bounds are `\e{' and `\e}',
+Xwith `{' and `}' by themselves ordinary characters.
+XThe parentheses for nested subexpressions are `\e(' and `\e)',
+Xwith `(' and `)' by themselves ordinary characters.
+X`^' is an ordinary character except at the beginning of the
+XRE or\(dg the beginning of a parenthesized subexpression,
+X`$' is an ordinary character except at the end of the
+XRE or\(dg the end of a parenthesized subexpression,
+Xand `*' is an ordinary character if it appears at the beginning of the
+XRE or the beginning of a parenthesized subexpression
+X(after a possible leading `^').
+XFinally, there is one new type of atom, a \fIback reference\fR:
+X`\e' followed by a non-zero decimal digit \fId\fR
+Xmatches the same sequence of characters
+Xmatched by the \fId\fRth parenthesized subexpression
+X(numbering subexpressions by the positions of their opening parentheses,
+Xleft to right),
+Xso that (e.g.) `\e([bc]\e)\e1' matches `bb' or `cc' but not `bc'.
+X.SH SEE ALSO
+Xregex(3)
+X.PP
+XPOSIX 1003.2, section 2.8 (Regular Expression Notation).
+X.SH HISTORY
+XWritten by Henry Spencer, based on the 1003.2 spec.
+X.SH BUGS
+XHaving two kinds of REs is a botch.
+X.PP
+XThe current 1003.2 spec says that `)' is an ordinary character in
+Xthe absence of an unmatched `(';
+Xthis was an unintentional result of a wording error,
+Xand change is likely.
+XAvoid relying on it.
+X.PP
+XBack references are a dreadful botch,
+Xposing major problems for efficient implementations.
+XThey are also somewhat vaguely defined
+X(does
+X`a\e(\e(b\e)*\e2\e)*d' match `abbbd'?).
+XAvoid using them.
+X.PP
+X1003.2's specification of case-independent matching is vague.
+XThe ``one case implies all cases'' definition given above
+Xis current consensus among implementors as to the right interpretation.
+X.PP
+XThe syntax for word boundaries is incredibly ugly.
+!
+echo 'tests':
+sed 's/^X//' >'tests' <<'!'
+X# regular expression test set
+X# Lines are at least three fields, separated by one or more tabs.  "" stands
+X# for an empty field.  First field is an RE.  Second field is flags.  If
+X# C flag given, regcomp() is expected to fail, and the third field is the
+X# error name (minus the leading REG_).
+X#
+X# Otherwise it is expected to succeed, and the third field is the string to
+X# try matching it against.  If there is no fourth field, the match is
+X# expected to fail.  If there is a fourth field, it is the substring that
+X# the RE is expected to match.  If there is a fifth field, it is a comma-
+X# separated list of what the subexpressions should match, with - indicating
+X# no match for that one.  In both the fourth and fifth fields, a (sub)field
+X# starting with @ indicates that the (sub)expression is expected to match
+X# a null string followed by the stuff after the @; this provides a way to
+X# test where null strings match.  The character `N' in REs and strings
+X# is newline, `S' is space, `T' is tab, `Z' is NUL.
+X#
+X# The full list of flags:
+X#	-	placeholder, does nothing
+X#	b	RE is a BRE, not an ERE
+X#	&	try it as both an ERE and a BRE
+X#	C	regcomp() error expected, third field is error name
+X#	i	REG_ICASE
+X#	m	("mundane") REG_NOSPEC
+X#	s	REG_NOSUB (not really testable)
+X#	n	REG_NEWLINE
+X#	^	REG_NOTBOL
+X#	$	REG_NOTEOL
+X#	#	REG_STARTEND (see below)
+X#	p	REG_PEND
+X#
+X# For REG_STARTEND, the start/end offsets are those of the substring
+X# enclosed in ().
+X
+X# basics
+Xa		&	a	a
+Xabc		&	abc	abc
+Xabc|de		-	abc	abc
+Xa|b|c		-	abc	a
+X
+X# parentheses and perversions thereof
+Xa(b)c		-	abc	abc
+Xa\(b\)c		b	abc	abc
+Xa(		C	EPAREN
+Xa(		b	a(	a(
+Xa\(		-	a(	a(
+Xa\(		bC	EPAREN
+Xa\(b		bC	EPAREN
+Xa(b		C	EPAREN
+Xa(b		b	a(b	a(b
+X# gag me with a right parenthesis -- 1003.2 goofed here (my fault, partly)
+Xa)		-	a)	a)
+X)		-	)	)
+X# end gagging (in a just world, those *should* give EPAREN)
+Xa)		b	a)	a)
+Xa\)		bC	EPAREN
+X\)		bC	EPAREN
+Xa()b		-	ab	ab
+Xa\(\)b		b	ab	ab
+X
+X# anchoring and REG_NEWLINE
+X^abc$		&	abc	abc
+Xa^b		-	a^b
+Xa^b		b	a^b	a^b
+Xa$b		-	a$b
+Xa$b		b	a$b	a$b
+X^		&	abc	@abc
+X$		&	abc	@
+X^$		&	""	@
+X$^		-	""	@
+X\($\)\(^\)	b	""	@
+X# stop retching, those are legitimate (although disgusting)
+X^^		-	""	@
+X$$		-	""	@
+Xb$		&	abNc
+Xb$		&n	abNc	b
+X^b$		&	aNbNc
+X^b$		&n	aNbNc	b
+X^$		&n	aNNb	@Nb
+X^$		n	abc
+X^$		n	abcN	@
+X$^		n	aNNb	@Nb
+X\($\)\(^\)	bn	aNNb	@Nb
+X^^		n^	aNNb	@Nb
+X$$		n	aNNb	@NN
+X^a		^	a
+Xa$		$	a
+X^a		^n	aNb
+X^b		^n	aNb	b
+Xa$		$n	bNa
+Xb$		$n	bNa	b
+Xa*(^b$)c*	-	b	b
+Xa*\(^b$\)c*	b	b	b
+X
+X# certain syntax errors and non-errors
+X|		C	EMPTY
+X|		b	|	|
+X*		C	BADRPT
+X*		b	*	*
+X+		C	BADRPT
+X?		C	BADRPT
+X""		&C	EMPTY
+X()		-	abc	@abc
+X\(\)		b	abc	@abc
+Xa||b		C	EMPTY
+X|ab		C	EMPTY
+Xab|		C	EMPTY
+X(|a)b		C	EMPTY
+X(a|)b		C	EMPTY
+X(*a)		C	BADRPT
+X(+a)		C	BADRPT
+X(?a)		C	BADRPT
+X({1}a)		C	BADRPT
+X\(\{1\}a\)	bC	BADRPT
+X(a|*b)		C	BADRPT
+X(a|+b)		C	BADRPT
+X(a|?b)		C	BADRPT
+X(a|{1}b)	C	BADRPT
+X^*		C	BADRPT
+X^*		b	*	*
+X^+		C	BADRPT
+X^?		C	BADRPT
+X^{1}		C	BADRPT
+X^\{1\}		bC	BADRPT
+X
+X# metacharacters, backslashes
+Xa.c		&	abc	abc
+Xa[bc]d		&	abd	abd
+Xa\*c		&	a*c	a*c
+Xa\\b		&	a\b	a\b
+Xa\\\*b		&	a\*b	a\*b
+Xa\bc		&	abc	abc
+Xa\		&C	EESCAPE
+Xa\\bc		&	a\bc	a\bc
+X\{		bC	BADRPT
+Xa\[b		&	a[b	a[b
+Xa[b		&C	EBRACK
+X# trailing $ is a peculiar special case for the BRE code
+Xa$		&	a	a
+Xa$		&	a$
+Xa\$		&	a
+Xa\$		&	a$	a$
+Xa\\$		&	a
+Xa\\$		&	a$
+Xa\\$		&	a\$
+Xa\\$		&	a\	a\
+X
+X# back references, ugh
+Xa\(b\)\2c	bC	ESUBREG
+Xa\(b\1\)c	bC	ESUBREG
+Xa\(b*\)c\1d	b	abbcbbd	abbcbbd	bb
+Xa\(b*\)c\1d	b	abbcbd
+Xa\(b*\)c\1d	b	abbcbbbd
+X^\(.\)\1	b	abc
+Xa\([bc]\)\1d	b	abcdabbd	abbd	b
+Xa\(\([bc]\)\2\)*d	b	abbccd	abbccd
+Xa\(\([bc]\)\2\)*d	b	abbcbd
+X# actually, this next one probably ought to fail, but the spec is unclear
+Xa\(\(b\)*\2\)*d		b	abbbd	abbbd
+X# here is a case that no NFA implementation does right
+X\(ab*\)[ab]*\1	b	ababaaa	ababaaa	a
+X# check out normal matching in the presence of back refs
+X\(a\)\1bcd	b	aabcd	aabcd
+X\(a\)\1bc*d	b	aabcd	aabcd
+X\(a\)\1bc*d	b	aabd	aabd
+X\(a\)\1bc*d	b	aabcccd	aabcccd
+X\(a\)\1bc*[ce]d	b	aabcccd	aabcccd
+X^\(a\)\1b\(c\)*cd$	b	aabcccd	aabcccd
+X
+X# ordinary repetitions
+Xab*c		&	abc	abc
+Xab+c		-	abc	abc
+Xab?c		-	abc	abc
+Xa\(*\)b		b	a*b	a*b
+Xa\(**\)b	b	ab	ab
+Xa\(***\)b	bC	BADRPT
+X*a		b	*a	*a
+X**a		b	a	a
+X***a		bC	BADRPT
+X
+X# the dreaded bounded repetitions
+X{		&	{	{
+X{abc		&	{abc	{abc
+X{1		C	BADRPT
+X{1}		C	BADRPT
+Xa{b		&	a{b	a{b
+Xa{1}b		-	ab	ab
+Xa\{1\}b		b	ab	ab
+Xa{1,}b		-	ab	ab
+Xa\{1,\}b	b	ab	ab
+Xa{1,2}b		-	aab	aab
+Xa\{1,2\}b	b	aab	aab
+Xa{1		C	EBRACE
+Xa\{1		bC	EBRACE
+Xa{1a		C	EBRACE
+Xa\{1a		bC	EBRACE
+Xa{1a}		C	BADBR
+Xa\{1a\}		bC	BADBR
+Xa{,2}		-	a{,2}	a{,2}
+Xa\{,2\}		bC	BADBR
+Xa{,}		-	a{,}	a{,}
+Xa\{,\}		bC	BADBR
+Xa{1,x}		C	BADBR
+Xa\{1,x\}	bC	BADBR
+Xa{1,x		C	EBRACE
+Xa\{1,x		bC	EBRACE
+Xa{300}		C	BADBR
+Xa\{300\}	bC	BADBR
+Xa{1,0}		C	BADBR
+Xa\{1,0\}	bC	BADBR
+Xab{0,0}c	-	abcac	ac
+Xab\{0,0\}c	b	abcac	ac
+Xab{0,1}c	-	abcac	abc
+Xab\{0,1\}c	b	abcac	abc
+Xab{0,3}c	-	abbcac	abbc
+Xab\{0,3\}c	b	abbcac	abbc
+Xab{1,1}c	-	acabc	abc
+Xab\{1,1\}c	b	acabc	abc
+Xab{1,3}c	-	acabc	abc
+Xab\{1,3\}c	b	acabc	abc
+Xab{2,2}c	-	abcabbc	abbc
+Xab\{2,2\}c	b	abcabbc	abbc
+Xab{2,4}c	-	abcabbc	abbc
+Xab\{2,4\}c	b	abcabbc	abbc
+X((a{1,10}){1,10}){1,10}	-	a	a	a,a
+X
+X# multiple repetitions
+Xa**		&C	BADRPT
+Xa++		C	BADRPT
+Xa??		C	BADRPT
+Xa*+		C	BADRPT
+Xa*?		C	BADRPT
+Xa+*		C	BADRPT
+Xa+?		C	BADRPT
+Xa?*		C	BADRPT
+Xa?+		C	BADRPT
+Xa{1}{1}		C	BADRPT
+Xa*{1}		C	BADRPT
+Xa+{1}		C	BADRPT
+Xa?{1}		C	BADRPT
+Xa{1}*		C	BADRPT
+Xa{1}+		C	BADRPT
+Xa{1}?		C	BADRPT
+Xa*{b}		-	a{b}	a{b}
+Xa\{1\}\{1\}	bC	BADRPT
+Xa*\{1\}		bC	BADRPT
+Xa\{1\}*		bC	BADRPT
+X
+X# brackets, and numerous perversions thereof
+Xa[b]c		&	abc	abc
+Xa[ab]c		&	abc	abc
+Xa[^ab]c		&	adc	adc
+Xa[]b]c		&	a]c	a]c
+Xa[[b]c		&	a[c	a[c
+Xa[-b]c		&	a-c	a-c
+Xa[^]b]c		&	adc	adc
+Xa[^-b]c		&	adc	adc
+Xa[b-]c		&	a-c	a-c
+Xa[b		&C	EBRACK
+Xa[]		&C	EBRACK
+Xa[1-3]c		&	a2c	a2c
+Xa[3-1]c		&C	ERANGE
+Xa[1-3-5]c	&C	ERANGE
+Xa[[.-.]--]c	&	a-c	a-c
+Xa[1-		&C	ERANGE
+Xa[[.		&C	EBRACK
+Xa[[.x		&C	EBRACK
+Xa[[.x.		&C	EBRACK
+Xa[[.x.]		&C	EBRACK
+Xa[[.x.]]	&	ax	ax
+Xa[[.x,.]]	&C	ECOLLATE
+Xa[[.one.]]b	&	a1b	a1b
+Xa[[.notdef.]]b	&C	ECOLLATE
+Xa[[.].]]b	&	a]b	a]b
+Xa[[:alpha:]]c	&	abc	abc
+Xa[[:notdef:]]c	&C	ECTYPE
+Xa[[:		&C	EBRACK
+Xa[[:alpha	&C	EBRACK
+Xa[[:alpha:]	&C	EBRACK
+Xa[[:alpha,:]	&C	ECTYPE
+Xa[[:]:]]b	&C	ECTYPE
+Xa[[:-:]]b	&C	ECTYPE
+Xa[[:alph:]]	&C	ECTYPE
+Xa[[:alphabet:]]	&C	ECTYPE
+X[[:alnum:]]+	-	-%@a0X-	a0X
+X[[:alpha:]]+	-	-%@aX0-	aX
+X[[:blank:]]+	-	aSSTb	SST
+X[[:cntrl:]]+	-	aNTb	NT
+X[[:digit:]]+	-	a019b	019
+X[[:graph:]]+	-	Sa%bS	a%b
+X[[:lower:]]+	-	AabC	ab
+X[[:print:]]+	-	NaSbN	aSb
+X[[:punct:]]+	-	S%-&T	%-&
+X[[:space:]]+	-	aSNTb	SNT
+X[[:upper:]]+	-	aBCd	BC
+X[[:xdigit:]]+	-	p0f3Cq	0f3C
+Xa[[=b=]]c	&	abc	abc
+Xa[[=		&C	EBRACK
+Xa[[=b		&C	EBRACK
+Xa[[=b=		&C	EBRACK
+Xa[[=b=]		&C	EBRACK
+Xa[[=b,=]]	&C	ECOLLATE
+Xa[[=one=]]b	&	a1b	a1b
+X
+X# complexities
+Xa(((b)))c	-	abc	abc
+Xa(b|(c))d	-	abd	abd
+Xa(b*|c)d	-	abbd	abbd
+X# just gotta have one DFA-buster, of course
+Xa[ab]{20}	-	aaaaabaaaabaaaabaaaab	aaaaabaaaabaaaabaaaab
+X# and an inline expansion in case somebody gets tricky
+Xa[ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab]	-	aaaaabaaaabaaaabaaaab	aaaaabaaaabaaaabaaaab
+X# and in case somebody just slips in an NFA...
+Xa[ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab][ab](wee|week)(knights|night)	-	aaaaabaaaabaaaabaaaabweeknights	aaaaabaaaabaaaabaaaabweeknights
+X# fish for anomalies as the number of states passes 32
+X12345678901234567890123456789	-	a12345678901234567890123456789b	12345678901234567890123456789
+X123456789012345678901234567890	-	a123456789012345678901234567890b	123456789012345678901234567890
+X1234567890123456789012345678901	-	a1234567890123456789012345678901b	1234567890123456789012345678901
+X12345678901234567890123456789012	-	a12345678901234567890123456789012b	12345678901234567890123456789012
+X123456789012345678901234567890123	-	a123456789012345678901234567890123b	123456789012345678901234567890123
+X# and one really big one, beyond any plausible word width
+X1234567890123456789012345678901234567890123456789012345678901234567890	-	a1234567890123456789012345678901234567890123456789012345678901234567890b	1234567890123456789012345678901234567890123456789012345678901234567890
+X# fish for problems as brackets go past 8
+X[ab][cd][ef][gh][ij][kl][mn]	-	xacegikmoq	acegikm
+X[ab][cd][ef][gh][ij][kl][mn][op]	-	xacegikmoq	acegikmo
+X[ab][cd][ef][gh][ij][kl][mn][op][qr]	-	xacegikmoqy	acegikmoq
+X[ab][cd][ef][gh][ij][kl][mn][op][q]	-	xacegikmoqy	acegikmoq
+X
+X# subtleties of matching
+Xabc		&	xabcy	abc
+Xa\(b\)?c\1d	b	acd
+XaBc		i	Abc	Abc
+Xa[Bc]*d		i	abBCcd	abBCcd
+X0[[:upper:]]1	&i	0a1	0a1
+X0[[:lower:]]1	&i	0A1	0A1
+Xa[^b]c		&i	abc
+Xa[^b]c		&i	aBc
+Xa[^b]c		&i	adc	adc
+X[a]b[c]		-	abc	abc
+X[a]b[a]		-	aba	aba
+X[abc]b[abc]	-	abc	abc
+X[abc]b[abd]	-	abd	abd
+Xa(b?c)+d	-	accd	accd
+X(wee|week)(knights|night)	-	weeknights	weeknights
+X(we|wee|week|frob)(knights|night|day)	-	weeknights	weeknights
+Xa[bc]d		-	xyzaaabcaababdacd	abd
+Xa[ab]c		-	aaabc	abc
+Xabc		s	abc	abc
+Xa*		&	b	@b
+X
+X# Let's have some fun -- try to match a C comment.
+X# first the obvious, which looks okay at first glance...
+X/\*.*\*/	-	/*x*/	/*x*/
+X# but...
+X/\*.*\*/	-	/*x*/y/*z*/	/*x*/y/*z*/
+X# okay, we must not match */ inside; try to do that...
+X/\*([^*]|\*[^/])*\*/	-	/*x*/	/*x*/
+X/\*([^*]|\*[^/])*\*/	-	/*x*/y/*z*/	/*x*/
+X# but...
+X/\*([^*]|\*[^/])*\*/	-	/*x**/y/*z*/	/*x**/y/*z*/
+X# and a still fancier version, which does it right (I think)...
+X/\*([^*]|\*+[^*/])*\*+/	-	/*x*/	/*x*/
+X/\*([^*]|\*+[^*/])*\*+/	-	/*x*/y/*z*/	/*x*/
+X/\*([^*]|\*+[^*/])*\*+/	-	/*x**/y/*z*/	/*x**/
+X/\*([^*]|\*+[^*/])*\*+/	-	/*x****/y/*z*/	/*x****/
+X/\*([^*]|\*+[^*/])*\*+/	-	/*x**x*/y/*z*/	/*x**x*/
+X/\*([^*]|\*+[^*/])*\*+/	-	/*x***x/y/*z*/	/*x***x/y/*z*/
+X
+X# subexpressions
+X.*		-	abc	abc	-
+Xa(b)(c)d	-	abcd	abcd	b,c
+Xa(((b)))c	-	abc	abc	b,b,b
+Xa(b|(c))d	-	abd	abd	b,-
+Xa(b*|c|e)d	-	abbd	abbd	bb
+Xa(b*|c|e)d	-	acd	acd	c
+Xa(b*|c|e)d	-	ad	ad	@d
+Xa(b?)c		-	abc	abc	b
+Xa(b?)c		-	ac	ac	@c
+Xa(b+)c		-	abc	abc	b
+Xa(b+)c		-	abbbc	abbbc	bbb
+Xa(b*)c		-	ac	ac	@c
+X(a|ab)(bc([de]+)f|cde)	-	abcdef	abcdef	a,bcdef,de
+X# the regression tester only asks for 9 subexpressions
+Xa(b)(c)(d)(e)(f)(g)(h)(i)(j)k	-	abcdefghijk	abcdefghijk	b,c,d,e,f,g,h,i,j
+Xa(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)l	-	abcdefghijkl	abcdefghijkl	b,c,d,e,f,g,h,i,j,k
+Xa([bc]?)c	-	abc	abc	b
+Xa([bc]?)c	-	ac	ac	@c
+Xa([bc]+)c	-	abc	abc	b
+Xa([bc]+)c	-	abcc	abcc	bc
+Xa([bc]+)bc	-	abcbc	abcbc	bc
+Xa(bb+|b)b	-	abb	abb	b
+Xa(bbb+|bb+|b)b	-	abb	abb	b
+Xa(bbb+|bb+|b)b	-	abbb	abbb	bb
+Xa(bbb+|bb+|b)bb	-	abbb	abbb	b
+X(.*).*		-	abcdef	abcdef	abcdef
+X(a*)*		-	bc	@b	@b
+X
+X# do we get the right subexpression when it is used more than once?
+Xa(b|c)*d	-	ad	ad	-
+Xa(b|c)*d	-	abcd	abcd	c
+Xa(b|c)+d	-	abd	abd	b
+Xa(b|c)+d	-	abcd	abcd	c
+Xa(b|c?)+d	-	ad	ad	@d
+Xa(b|c?)+d	-	abcd	abcd	@d
+Xa(b|c){0,0}d	-	ad	ad	-
+Xa(b|c){0,1}d	-	ad	ad	-
+Xa(b|c){0,1}d	-	abd	abd	b
+Xa(b|c){0,2}d	-	ad	ad	-
+Xa(b|c){0,2}d	-	abcd	abcd	c
+Xa(b|c){0,}d	-	ad	ad	-
+Xa(b|c){0,}d	-	abcd	abcd	c
+Xa(b|c){1,1}d	-	abd	abd	b
+Xa(b|c){1,1}d	-	acd	acd	c
+Xa(b|c){1,2}d	-	abd	abd	b
+Xa(b|c){1,2}d	-	abcd	abcd	c
+Xa(b|c){1,}d	-	abd	abd	b
+Xa(b|c){1,}d	-	abcd	abcd	c
+Xa(b|c){2,2}d	-	acbd	acbd	b
+Xa(b|c){2,2}d	-	abcd	abcd	c
+Xa(b|c){2,4}d	-	abcd	abcd	c
+Xa(b|c){2,4}d	-	abcbd	abcbd	b
+Xa(b|c){2,4}d	-	abcbcd	abcbcd	c
+Xa(b|c){2,}d	-	abcd	abcd	c
+Xa(b|c){2,}d	-	abcbd	abcbd	b
+Xa(b+|((c)*))+d	-	abd	abd	@d,@d,-
+Xa(b+|((c)*))+d	-	abcd	abcd	@d,@d,-
+X
+X# check out the STARTEND option
+X[abc]		&#	a(b)c	b
+X[abc]		&#	a(d)c
+X[abc]		&#	a(bc)d	b
+X[abc]		&#	a(dc)d	c
+X.		&#	a()c
+Xb.*c		&#	b(bc)c	bc
+Xb.*		&#	b(bc)c	bc
+X.*c		&#	b(bc)c	bc
+X
+X# plain strings, with the NOSPEC flag
+Xabc		m	abc	abc
+Xabc		m	xabcy	abc
+Xabc		m	xyz
+Xa*b		m	aba*b	a*b
+Xa*b		m	ab
+X""		mC	EMPTY
+X
+X# cases involving NULs
+XaZb		&	a	a
+XaZb		&p	a
+XaZb		&p#	(aZb)	aZb
+XaZ*b		&p#	(ab)	ab
+Xa.b		&#	(aZb)	aZb
+Xa.*		&#	(aZb)c	aZb
+X
+X# word boundaries (ick)
+X[[:<:]]a	&	a	a
+X[[:<:]]a	&	ba
+X[[:<:]]a	&	-a	a
+Xa[[:>:]]	&	a	a
+Xa[[:>:]]	&	ab
+Xa[[:>:]]	&	a-	a
+X[[:<:]]a.c[[:>:]]	&	axcd-dayc-dazce-abc	abc
+X[[:<:]]a.c[[:>:]]	&	axcd-dayc-dazce-abc-q	abc
+X[[:<:]]a.c[[:>:]]	&	axc-dayc-dazce-abc	axc
+X[[:<:]]b.c[[:>:]]	&	a_bxc-byc_d-bzc-q	bzc
+X[[:<:]].x..[[:>:]]	&	y_xa_-_xb_y-_xc_-axdc	_xc_
+X[[:<:]]a_b[[:>:]]	&	x_a_b
+X
+X# past problems, and suspected problems
+X(A[1])|(A[2])|(A[3])|(A[4])|(A[5])|(A[6])|(A[7])|(A[8])|(A[9])|(A[A])	-	A1	A1
+Xabcdefghijklmnop	i	abcdefghijklmnop	abcdefghijklmnop
+Xabcdefghijklmnopqrstuv	i	abcdefghijklmnopqrstuv	abcdefghijklmnopqrstuv
+X(ALAK)|(ALT[AB])|(CC[123]1)|(CM[123]1)|(GAMC)|(LC[23][EO ])|(SEM[1234])|(SL[ES][12])|(SLWW)|(SLF )|(SLDT)|(VWH[12])|(WH[34][EW])|(WP1[ESN])	-	CC11	CC11
+XCC[13]1|a{21}[23][EO][123][Es][12]a{15}aa[34][EW]aaaaaaa[X]a	-	CC11	CC11
+XChar \([a-z0-9_]*\)\[.*	b	Char xyz[k	Char xyz[k	xyz
+Xa?b	-	ab	ab
+X-\{0,1\}[0-9]*$	b	-5	-5
+Xa*a*a*a*a*a*a*	&	aaaaaa	aaaaaa
+!
+echo 'cclass.h':
+sed 's/^X//' >'cclass.h' <<'!'
+X/* character-class table */
+Xstatic struct cclass {
+X	char *name;
+X	char *chars;
+X	char *multis;
+X} cclasses[] = {
+X	"alnum",	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\
+X0123456789",				"",
+X	"alpha",	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+X					"",
+X	"blank",	" \t",		"",
+X	"cntrl",	"\007\b\t\n\v\f\r\1\2\3\4\5\6\16\17\20\21\22\23\24\
+X\25\26\27\30\31\32\33\34\35\36\37\177",	"",
+X	"digit",	"0123456789",	"",
+X	"graph",	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\
+X0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+X					"",
+X	"lower",	"abcdefghijklmnopqrstuvwxyz",
+X					"",
+X	"print",	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\
+X0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ ",
+X					"",
+X	"punct",	"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+X					"",
+X	"space",	"\t\n\v\f\r ",	"",
+X	"upper",	"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+X					"",
+X	"xdigit",	"0123456789ABCDEFabcdef",
+X					"",
+X	NULL,		0,		""
+X};
+!
+echo 'cname.h':
+sed 's/^X//' >'cname.h' <<'!'
+X/* character-name table */
+Xstatic struct cname {
+X	char *name;
+X	char code;
+X} cnames[] = {
+X	"NUL",	'\0',
+X	"SOH",	'\001',
+X	"STX",	'\002',
+X	"ETX",	'\003',
+X	"EOT",	'\004',
+X	"ENQ",	'\005',
+X	"ACK",	'\006',
+X	"BEL",	'\007',
+X	"alert",	'\007',
+X	"BS",		'\010',
+X	"backspace",	'\b',
+X	"HT",		'\011',
+X	"tab",		'\t',
+X	"LF",		'\012',
+X	"newline",	'\n',
+X	"VT",		'\013',
+X	"vertical-tab",	'\v',
+X	"FF",		'\014',
+X	"form-feed",	'\f',
+X	"CR",		'\015',
+X	"carriage-return",	'\r',
+X	"SO",	'\016',
+X	"SI",	'\017',
+X	"DLE",	'\020',
+X	"DC1",	'\021',
+X	"DC2",	'\022',
+X	"DC3",	'\023',
+X	"DC4",	'\024',
+X	"NAK",	'\025',
+X	"SYN",	'\026',
+X	"ETB",	'\027',
+X	"CAN",	'\030',
+X	"EM",	'\031',
+X	"SUB",	'\032',
+X	"ESC",	'\033',
+X	"IS4",	'\034',
+X	"FS",	'\034',
+X	"IS3",	'\035',
+X	"GS",	'\035',
+X	"IS2",	'\036',
+X	"RS",	'\036',
+X	"IS1",	'\037',
+X	"US",	'\037',
+X	"space",		' ',
+X	"exclamation-mark",	'!',
+X	"quotation-mark",	'"',
+X	"number-sign",		'#',
+X	"dollar-sign",		'$',
+X	"percent-sign",		'%',
+X	"ampersand",		'&',
+X	"apostrophe",		'\'',
+X	"left-parenthesis",	'(',
+X	"right-parenthesis",	')',
+X	"asterisk",	'*',
+X	"plus-sign",	'+',
+X	"comma",	',',
+X	"hyphen",	'-',
+X	"hyphen-minus",	'-',
+X	"period",	'.',
+X	"full-stop",	'.',
+X	"slash",	'/',
+X	"solidus",	'/',
+X	"zero",		'0',
+X	"one",		'1',
+X	"two",		'2',
+X	"three",	'3',
+X	"four",		'4',
+X	"five",		'5',
+X	"six",		'6',
+X	"seven",	'7',
+X	"eight",	'8',
+X	"nine",		'9',
+X	"colon",	':',
+X	"semicolon",	';',
+X	"less-than-sign",	'<',
+X	"equals-sign",		'=',
+X	"greater-than-sign",	'>',
+X	"question-mark",	'?',
+X	"commercial-at",	'@',
+X	"left-square-bracket",	'[',
+X	"backslash",		'\\',
+X	"reverse-solidus",	'\\',
+X	"right-square-bracket",	']',
+X	"circumflex",		'^',
+X	"circumflex-accent",	'^',
+X	"underscore",		'_',
+X	"low-line",		'_',
+X	"grave-accent",		'`',
+X	"left-brace",		'{',
+X	"left-curly-bracket",	'{',
+X	"vertical-line",	'|',
+X	"right-brace",		'}',
+X	"right-curly-bracket",	'}',
+X	"tilde",		'~',
+X	"DEL",	'\177',
+X	NULL,	0,
+X};
+!
+echo 'regex2.h':
+sed 's/^X//' >'regex2.h' <<'!'
+X/*
+X * First, the stuff that ends up in the outside-world include file
+X = typedef off_t regoff_t;
+X = typedef struct {
+X = 	int re_magic;
+X = 	size_t re_nsub;		// number of parenthesized subexpressions
+X = 	const char *re_endp;	// end pointer for REG_PEND
+X = 	struct re_guts *re_g;	// none of your business :-)
+X = } regex_t;
+X = typedef struct {
+X = 	regoff_t rm_so;		// start of match
+X = 	regoff_t rm_eo;		// end of match
+X = } regmatch_t;
+X */
+X/*
+X * internals of regex_t
+X */
+X#define	MAGIC1	((('r'^0200)<<8) | 'e')
+X
+X/*
+X * The internal representation is a *strip*, a sequence of
+X * operators ending with an endmarker.  (Some terminology etc. is a
+X * historical relic of earlier versions which used multiple strips.)
+X * Certain oddities in the representation are there to permit running
+X * the machinery backwards; in particular, any deviation from sequential
+X * flow must be marked at both its source and its destination.  Some
+X * fine points:
+X *
+X * - OPLUS_ and O_PLUS are *inside* the loop they create.
+X * - OQUEST_ and O_QUEST are *outside* the bypass they create.
+X * - OCH_ and O_CH are *outside* the multi-way branch they create, while
+X *   OOR1 and OOR2 are respectively the end and the beginning of one of
+X *   the branches.  Note that there is an implicit OOR2 following OCH_
+X *   and an implicit OOR1 preceding O_CH.
+X *
+X * In state representations, an operator's bit is on to signify a state
+X * immediately *preceding* "execution" of that operator.
+X */
+Xtypedef long sop;		/* strip operator */
+Xtypedef long sopno;
+X#define	OPRMASK	0x7c000000
+X#define	OPDMASK	0x03ffffff
+X#define	OPSHIFT	(26)
+X#define	OP(n)	((n)&OPRMASK)
+X#define	OPND(n)	((n)&OPDMASK)
+X#define	SOP(op, opnd)	((op)|(opnd))
+X/* operators			   meaning	operand			*/
+X/*						(back, fwd are offsets)	*/
+X#define	OEND	(1<<OPSHIFT)	/* endmarker	-			*/
+X#define	OCHAR	(2<<OPSHIFT)	/* character	unsigned char		*/
+X#define	OBOL	(3<<OPSHIFT)	/* left anchor	-			*/
+X#define	OEOL	(4<<OPSHIFT)	/* right anchor	-			*/
+X#define	OANY	(5<<OPSHIFT)	/* .		-			*/
+X#define	OANYOF	(6<<OPSHIFT)	/* [...]	set number		*/
+X#define	OBACK_	(7<<OPSHIFT)	/* begin \d	paren number		*/
+X#define	O_BACK	(8<<OPSHIFT)	/* end \d	paren number		*/
+X#define	OPLUS_	(9<<OPSHIFT)	/* + prefix	fwd to suffix		*/
+X#define	O_PLUS	(10<<OPSHIFT)	/* + suffix	back to prefix		*/
+X#define	OQUEST_	(11<<OPSHIFT)	/* ? prefix	fwd to suffix		*/
+X#define	O_QUEST	(12<<OPSHIFT)	/* ? suffix	back to prefix		*/
+X#define	OLPAREN	(13<<OPSHIFT)	/* (		fwd to )		*/
+X#define	ORPAREN	(14<<OPSHIFT)	/* )		back to (		*/
+X#define	OCH_	(15<<OPSHIFT)	/* begin choice	fwd to OOR2		*/
+X#define	OOR1	(16<<OPSHIFT)	/* | pt. 1	back to OOR1 or OCH_	*/
+X#define	OOR2	(17<<OPSHIFT)	/* | pt. 2	fwd to OOR2 or O_CH	*/
+X#define	O_CH	(18<<OPSHIFT)	/* end choice	back to OOR1		*/
+X#define	OBOW	(19<<OPSHIFT)	/* begin word	-			*/
+X#define	OEOW	(20<<OPSHIFT)	/* end word	-			*/
+X
+X/*
+X * Structure for [] character-set representation.  Character sets are
+X * done as bit vectors, grouped 8 to a byte vector for compactness.
+X * The individual set therefore has both a pointer to the byte vector
+X * and a mask to pick out the relevant bit of each byte.  A hash code
+X * simplifies testing whether two sets could be identical.
+X *
+X * This will get trickier for multicharacter collating elements.  As
+X * preliminary hooks for dealing with such things, we also carry along
+X * a string of multi-character elements, and decide the size of the
+X * vectors at run time.
+X */
+Xtypedef struct {
+X	uch *ptr;		/* -> uch [csetsize] */
+X	uch mask;		/* bit within array */
+X	uch hash;		/* hash code */
+X	size_t smultis;
+X	char *multis;		/* -> char[smulti]  ab\0cd\0ef\0\0 */
+X} cset;
+X/* note that CHadd and CHsub are unsafe, and CHIN doesn't yield 0/1 */
+X#define	CHadd(cs, c)	((cs)->ptr[(uch)(c)] |= (cs)->mask, (cs)->hash += (c))
+X#define	CHsub(cs, c)	((cs)->ptr[(uch)(c)] &= ~(cs)->mask, (cs)->hash -= (c))
+X#define	CHIN(cs, c)	((cs)->ptr[(uch)(c)] & (cs)->mask)
+X#define	MCadd(p, cs, cp)	mcadd(p, cs, cp)	/* regcomp() internal fns */
+X#define	MCsub(p, cs, cp)	mcsub(p, cs, cp)
+X#define	MCin(p, cs, cp)	mcin(p, cs, cp)
+X
+X/* stuff for character categories */
+Xtypedef unsigned char cat_t;
+X
+X/*
+X * main compiled-expression structure
+X */
+Xstruct re_guts {
+X	int magic;
+X#		define	MAGIC2	((('R'^0200)<<8)|'E')
+X	sop *strip;		/* malloced area for strip */
+X	int csetsize;		/* number of bits in a cset vector */
+X	int ncsets;		/* number of csets in use */
+X	cset *sets;		/* -> cset [ncsets] */
+X	uch *setbits;		/* -> uch[csetsize][ncsets/CHAR_BIT] */
+X	int cflags;		/* copy of regcomp() cflags argument */
+X	sopno nstates;		/* = number of sops */
+X	sopno firststate;	/* the initial OEND (normally 0) */
+X	sopno laststate;	/* the final OEND */
+X	int iflags;		/* internal flags */
+X#		define	USEBOL	01	/* used ^ */
+X#		define	USEEOL	02	/* used $ */
+X#		define	BAD	04	/* something wrong */
+X	int nbol;		/* number of ^ used */
+X	int neol;		/* number of $ used */
+X	int ncategories;	/* how many character categories */
+X	cat_t *categories;	/* ->catspace[-CHAR_MIN] */
+X	char *must;		/* match must contain this string */
+X	int mlen;		/* length of must */
+X	size_t nsub;		/* copy of re_nsub */
+X	int backrefs;		/* does it use back references? */
+X	sopno nplus;		/* how deep does it nest +s? */
+X	/* catspace must be last */
+X	cat_t catspace[1];	/* actually [NC] */
+X};
+X
+X/* misc utilities */
+X#define	OUT	(CHAR_MAX+1)	/* a non-character value */
+X#define	ISWORD(c)	(isalnum(c) || (c) == '_')
+!
+echo 'utils.h':
+sed 's/^X//' >'utils.h' <<'!'
+X/* utility definitions */
+X#ifdef _POSIX2_RE_DUP_MAX
+X#define	DUPMAX	_POSIX2_RE_DUP_MAX
+X#else
+X#define	DUPMAX	255
+X#endif
+X#define	INFINITY	(DUPMAX + 1)
+X#define	NC		(CHAR_MAX - CHAR_MIN + 1)
+Xtypedef unsigned char uch;
+X
+X/* switch off assertions (if not already off) if no REDEBUG */
+X#ifndef REDEBUG
+X#ifndef NDEBUG
+X#define	NDEBUG	/* no assertions please */
+X#endif
+X#endif
+X#include <assert.h>
+X
+X/* for old systems with bcopy() but no memmove() */
+X#ifdef USEBCOPY
+X#define	memmove(d, s, c)	bcopy(s, d, c)
+X#endif
+!
+echo 'regcomp.c':
+sed 's/^X//' >'regcomp.c' <<'!'
+X#include <sys/types.h>
+X#include <stdio.h>
+X#include <string.h>
+X#include <ctype.h>
+X#include <limits.h>
+X#include <stdlib.h>
+X#include <regex.h>
+X
+X#include "utils.h"
+X#include "regex2.h"
+X
+X#include "cclass.h"
+X#include "cname.h"
+X
+X/*
+X * parse structure, passed up and down to avoid global variables and
+X * other clumsinesses
+X */
+Xstruct parse {
+X	char *next;		/* next character in RE */
+X	char *end;		/* end of string (-> NUL normally) */
+X	int error;		/* has an error been seen? */
+X	sop *strip;		/* malloced strip */
+X	sopno ssize;		/* malloced strip size (allocated) */
+X	sopno slen;		/* malloced strip length (used) */
+X	int ncsalloc;		/* number of csets allocated */
+X	struct re_guts *g;
+X#	define	NPAREN	10	/* we need to remember () 1-9 for back refs */
+X	sopno pbegin[NPAREN];	/* -> ( ([0] unused) */
+X	sopno pend[NPAREN];	/* -> ) ([0] unused) */
+X};
+X
+X#include "regcomp.ih"
+X
+Xstatic char nuls[10];		/* place to point scanner in event of error */
+X
+X/*
+X * macros for use with parse structure
+X * BEWARE:  these know that the parse structure is named `p' !!!
+X */
+X#define	PEEK()	(*p->next)
+X#define	PEEK2()	(*(p->next+1))
+X#define	MORE()	(p->next < p->end)
+X#define	MORE2()	(p->next+1 < p->end)
+X#define	SEE(c)	(MORE() && PEEK() == (c))
+X#define	SEETWO(a, b)	(MORE() && MORE2() && PEEK() == (a) && PEEK2() == (b))
+X#define	EAT(c)	((SEE(c)) ? (NEXT(), 1) : 0)
+X#define	EATTWO(a, b)	((SEETWO(a, b)) ? (NEXT2(), 1) : 0)
+X#define	NEXT()	(p->next++)
+X#define	NEXT2()	(p->next += 2)
+X#define	NEXTn(n)	(p->next += (n))
+X#define	GETNEXT()	(*p->next++)
+X#define	SETERROR(e)	seterr(p, (e))
+X#define	REQUIRE(co, e)	((co) || SETERROR(e))
+X#define	MUSTSEE(c, e)	(REQUIRE(MORE() && PEEK() == (c), e))
+X#define	MUSTEAT(c, e)	(REQUIRE(MORE() && GETNEXT() == (c), e))
+X#define	MUSTNOTSEE(c, e)	(REQUIRE(!MORE() || PEEK() != (c), e))
+X#define	EMIT(op, sopnd)	doemit(p, (sop)(op), (size_t)(sopnd))
+X#define	INSERT(op, pos)	doinsert(p, (sop)(op), HERE()-(pos)+1, pos)
+X#define	AHEAD(pos)		dofwd(p, pos, HERE()-(pos))
+X#define	ASTERN(sop, pos)	EMIT(sop, HERE()-pos)
+X#define	HERE()		(p->slen)
+X#define	THERE()		(p->slen - 1)
+X#define	THERETHERE()	(p->slen - 2)
+X#define	DROP(n)	(p->slen -= (n))
+X
+X#ifndef NDEBUG
+Xstatic int never = 0;		/* for use in asserts; shuts lint up */
+X#else
+X#define	never	0		/* some <assert.h>s have bugs too */
+X#endif
+X
+X/*
+X - regcomp - interface for parser and compilation
+X = extern int regcomp(regex_t *, const char *, int);
+X = #define	REG_BASIC	0000
+X = #define	REG_EXTENDED	0001
+X = #define	REG_ICASE	0002
+X = #define	REG_NOSUB	0004
+X = #define	REG_NEWLINE	0010
+X = #define	REG_NOSPEC	0020
+X = #define	REG_PEND	0040
+X = #define	REG_DUMP	0200
+X */
+Xint				/* 0 success, otherwise REG_something */
+Xregcomp(preg, pattern, cflags)
+Xregex_t *preg;
+Xconst char *pattern;
+Xint cflags;
+X{
+X	struct parse pa;
+X	register struct re_guts *g;
+X	register struct parse *p = &pa;
+X	register int i;
+X	register size_t len;
+X#ifdef REDEBUG
+X#	define	GOODFLAGS(f)	(f)
+X#else
+X#	define	GOODFLAGS(f)	((f)&~REG_DUMP)
+X#endif
+X
+X	cflags = GOODFLAGS(cflags);
+X	if ((cflags&REG_EXTENDED) && (cflags&REG_NOSPEC))
+X		return(REG_INVARG);
+X
+X	if (cflags&REG_PEND) {
+X		if (preg->re_endp < pattern)
+X			return(REG_INVARG);
+X		len = preg->re_endp - pattern;
+X	} else
+X		len = strlen((char *)pattern);
+X
+X	/* do the mallocs early so failure handling is easy */
+X	g = (struct re_guts *)malloc(sizeof(struct re_guts) +
+X							(NC-1)*sizeof(cat_t));
+X	if (g == NULL)
+X		return(REG_ESPACE);
+X	p->ssize = len/(size_t)2*(size_t)3 + (size_t)1;	/* ugh */
+X	p->strip = (sop *)malloc(p->ssize * sizeof(sop));
+X	p->slen = 0;
+X	if (p->strip == NULL) {
+X		free((char *)g);
+X		return(REG_ESPACE);
+X	}
+X
+X	/* set things up */
+X	p->g = g;
+X	p->next = (char *)pattern;	/* convenience; we do not modify it */
+X	p->end = p->next + len;
+X	p->error = 0;
+X	p->ncsalloc = 0;
+X	for (i = 0; i < NPAREN; i++) {
+X		p->pbegin[i] = 0;
+X		p->pend[i] = 0;
+X	}
+X	g->csetsize = NC;
+X	g->sets = NULL;
+X	g->setbits = NULL;
+X	g->ncsets = 0;
+X	g->cflags = cflags;
+X	g->iflags = 0;
+X	g->nbol = 0;
+X	g->neol = 0;
+X	g->must = NULL;
+X	g->mlen = 0;
+X	g->nsub = 0;
+X	g->ncategories = 1;	/* category 0 is "everything else" */
+X	g->categories = &g->catspace[-(CHAR_MIN)];
+X	(void) memset((char *)g->catspace, 0, NC*sizeof(cat_t));
+X	g->backrefs = 0;
+X
+X	/* do it */
+X	EMIT(OEND, 0);
+X	g->firststate = THERE();
+X	if (cflags&REG_EXTENDED)
+X		p_ere(p, OUT);
+X	else if (cflags&REG_NOSPEC)
+X		p_str(p);
+X	else
+X		p_bre(p, OUT, OUT);
+X	EMIT(OEND, 0);
+X	g->laststate = THERE();
+X
+X	/* tidy up loose ends and fill things in */
+X	categorize(p, g);
+X	stripsnug(p, g);
+X	findmust(p, g);
+X	g->nplus = pluscount(p, g);
+X	g->magic = MAGIC2;
+X	preg->re_nsub = g->nsub;
+X	preg->re_g = g;
+X	preg->re_magic = MAGIC1;
+X#ifndef REDEBUG
+X	/* not debugging, so can't rely on the assert() in regexec() */
+X	if (g->iflags&BAD)
+X		SETERROR(REG_ASSERT);
+X#endif
+X
+X	/* win or lose, we're done */
+X	if (p->error != 0)	/* lose */
+X		regfree(preg);
+X	return(p->error);
+X}
+X
+X/*
+X - p_ere - ERE parser top level, concatenation and alternation
+X == static void p_ere(register struct parse *p, int stop);
+X */
+Xstatic void
+Xp_ere(p, stop)
+Xregister struct parse *p;
+Xint stop;			/* character this ERE should end at */
+X{
+X	register char c;
+X	register sopno prevback;
+X	register sopno prevfwd;
+X	register sopno conc;
+X	register int first = 1;		/* is this the first alternative? */
+X
+X	for (;;) {
+X		/* do a bunch of concatenated expressions */
+X		conc = HERE();
+X		while (MORE() && (c = PEEK()) != '|' && c != stop)
+X			p_ere_exp(p);
+X		REQUIRE(HERE() != conc, REG_EMPTY);	/* require nonempty */
+X
+X		if (!EAT('|'))
+X			break;		/* NOTE BREAK OUT */
+X
+X		if (first) {
+X			INSERT(OCH_, conc);	/* offset is wrong */
+X			prevfwd = conc;
+X			prevback = conc;
+X			first = 0;
+X		}
+X		ASTERN(OOR1, prevback);
+X		prevback = THERE();
+X		AHEAD(prevfwd);			/* fix previous offset */
+X		prevfwd = HERE();
+X		EMIT(OOR2, 0);			/* offset is very wrong */
+X	}
+X
+X	if (!first) {		/* tail-end fixups */
+X		AHEAD(prevfwd);
+X		ASTERN(O_CH, prevback);
+X	}
+X
+X	assert(!MORE() || SEE(stop));
+X}
+X
+X/*
+X - p_ere_exp - parse one subERE, an atom possibly followed by a repetition op
+X == static void p_ere_exp(register struct parse *p);
+X */
+Xstatic void
+Xp_ere_exp(p)
+Xregister struct parse *p;
+X{
+X	register char c;
+X	register sopno pos;
+X	register int count;
+X	register int count2;
+X	register sopno subno;
+X	int wascaret = 0;
+X
+X	assert(MORE());		/* caller should have ensured this */
+X	c = GETNEXT();
+X
+X	pos = HERE();
+X	switch (c) {
+X	case '(':
+X		REQUIRE(MORE(), REG_EPAREN);
+X		p->g->nsub++;
+X		subno = p->g->nsub;
+X		if (subno < NPAREN)
+X			p->pbegin[subno] = HERE();
+X		EMIT(OLPAREN, subno);
+X		if (!SEE(')'))
+X			p_ere(p, ')');
+X		if (subno < NPAREN) {
+X			p->pend[subno] = HERE();
+X			assert(p->pend[subno] != 0);
+X		}
+X		EMIT(ORPAREN, subno);
+X		MUSTEAT(')', REG_EPAREN);
+X		break;
+X#ifndef POSIX_MISTAKE
+X	case ')':		/* happens only if no current unmatched ( */
+X		/*
+X		 * You may ask, why the ifndef?  Because I didn't notice
+X		 * this until slightly too late for 1003.2, and none of the
+X		 * other 1003.2 regular-expression reviewers noticed it at
+X		 * all.  So an unmatched ) is legal POSIX, at least until
+X		 * we can get it fixed.
+X		 */
+X		SETERROR(REG_EPAREN);
+X		break;
+X#endif
+X	case '^':
+X		EMIT(OBOL, 0);
+X		p->g->iflags |= USEBOL;
+X		p->g->nbol++;
+X		wascaret = 1;
+X		break;
+X	case '$':
+X		EMIT(OEOL, 0);
+X		p->g->iflags |= USEEOL;
+X		p->g->neol++;
+X		break;
+X	case '|':
+X		SETERROR(REG_EMPTY);
+X		break;
+X	case '*':
+X	case '+':
+X	case '?':
+X		SETERROR(REG_BADRPT);
+X		break;
+X	case '.':
+X		if (p->g->cflags&REG_NEWLINE)
+X			nonnewline(p);
+X		else
+X			EMIT(OANY, 0);
+X		break;
+X	case '[':
+X		p_bracket(p);
+X		break;
+X	case '\\':
+X		REQUIRE(MORE(), REG_EESCAPE);
+X		c = GETNEXT();
+X		ordinary(p, c);
+X		break;
+X	case '{':		/* okay as ordinary except if digit follows */
+X		REQUIRE(!MORE() || !isdigit(PEEK()), REG_BADRPT);
+X		/* FALLTHROUGH */
+X	default:
+X		ordinary(p, c);
+X		break;
+X	}
+X
+X	if (!MORE())
+X		return;
+X	c = PEEK();
+X	/* we call { a repetition if followed by a digit */
+X	if (!( c == '*' || c == '+' || c == '?' ||
+X				(c == '{' && MORE2() && isdigit(PEEK2())) ))
+X		return;		/* no repetition, we're done */
+X	NEXT();
+X
+X	REQUIRE(!wascaret, REG_BADRPT);
+X	switch (c) {
+X	case '*':	/* implemented as +? */
+X		/* this case does not require the (y|) trick, noKLUDGE */
+X		INSERT(OPLUS_, pos);
+X		ASTERN(O_PLUS, pos);
+X		INSERT(OQUEST_, pos);
+X		ASTERN(O_QUEST, pos);
+X		break;
+X	case '+':
+X		INSERT(OPLUS_, pos);
+X		ASTERN(O_PLUS, pos);
+X		break;
+X	case '?':
+X		/* KLUDGE: emit y? as (y|) until subtle bug gets fixed */
+X		INSERT(OCH_, pos);		/* offset slightly wrong */
+X		ASTERN(OOR1, pos);		/* this one's right */
+X		AHEAD(pos);			/* fix the OCH_ */
+X		EMIT(OOR2, 0);			/* offset very wrong... */
+X		AHEAD(THERE());			/* ...so fix it */
+X		ASTERN(O_CH, THERETHERE());
+X		break;
+X	case '{':
+X		count = p_count(p);
+X		if (EAT(',')) {
+X			if (isdigit(PEEK())) {
+X				count2 = p_count(p);
+X				REQUIRE(count <= count2, REG_BADBR);
+X			} else		/* single number with comma */
+X				count2 = INFINITY;
+X		} else		/* just a single number */
+X			count2 = count;
+X		repeat(p, pos, count, count2);
+X		if (!EAT('}')) {	/* error heuristics */
+X			while (MORE() && PEEK() != '}')
+X				NEXT();
+X			REQUIRE(MORE(), REG_EBRACE);
+X			SETERROR(REG_BADBR);
+X		}
+X		break;
+X	}
+X
+X	if (!MORE())
+X		return;
+X	c = PEEK();
+X	if (!( c == '*' || c == '+' || c == '?' ||
+X				(c == '{' && MORE2() && isdigit(PEEK2())) ) )
+X		return;
+X	SETERROR(REG_BADRPT);
+X}
+X
+X/*
+X - p_str - string (no metacharacters) "parser"
+X == static void p_str(register struct parse *p);
+X */
+Xstatic void
+Xp_str(p)
+Xregister struct parse *p;
+X{
+X	REQUIRE(MORE(), REG_EMPTY);
+X	while (MORE())
+X		ordinary(p, GETNEXT());
+X}
+X
+X/*
+X - p_bre - BRE parser top level, anchoring and concatenation
+X == static void p_bre(register struct parse *p, register int end1, \
+X ==	register int end2);
+X * Giving end1 as OUT essentially eliminates the end1/end2 check.
+X *
+X * This implementation is a bit of a kludge, in that a trailing $ is first
+X * taken as an ordinary character and then revised to be an anchor.  The
+X * only undesirable side effect is that '$' gets included as a character
+X * category in such cases.  This is fairly harmless; not worth fixing.
+X * The amount of lookahead needed to avoid this kludge is excessive.
+X */
+Xstatic void
+Xp_bre(p, end1, end2)
+Xregister struct parse *p;
+Xregister int end1;		/* first terminating character */
+Xregister int end2;		/* second terminating character */
+X{
+X	register sopno start = HERE();
+X	register int first = 1;			/* first subexpression? */
+X	register int wasdollar = 0;
+X
+X	if (EAT('^')) {
+X		EMIT(OBOL, 0);
+X		p->g->iflags |= USEBOL;
+X		p->g->nbol++;
+X	}
+X	while (MORE() && !SEETWO(end1, end2)) {
+X		wasdollar = p_simp_re(p, first);
+X		first = 0;
+X	}
+X	if (wasdollar) {	/* oops, that was a trailing anchor */
+X		DROP(1);
+X		EMIT(OEOL, 0);
+X		p->g->iflags |= USEEOL;
+X		p->g->neol++;
+X	}
+X
+X	REQUIRE(HERE() != start, REG_EMPTY);	/* require nonempty */
+X}
+X
+X/*
+X - p_simp_re - parse a simple RE, an atom possibly followed by a repetition
+X == static int p_simp_re(register struct parse *p, int starordinary);
+X */
+Xstatic int			/* was the simple RE an unbackslashed $? */
+Xp_simp_re(p, starordinary)
+Xregister struct parse *p;
+Xint starordinary;		/* is a leading * an ordinary character? */
+X{
+X	register int c;
+X	register int count;
+X	register int count2;
+X	register sopno pos;
+X	register int i;
+X	register sopno subno;
+X#	define	BACKSL	(1<<CHAR_BIT)
+X
+X	pos = HERE();		/* repetion op, if any, covers from here */
+X
+X	assert(MORE());		/* caller should have ensured this */
+X	c = GETNEXT();
+X	if (c == '\\') {
+X		REQUIRE(MORE(), REG_EESCAPE);
+X		c = BACKSL | (unsigned char)GETNEXT();
+X	}
+X	switch (c) {
+X	case '.':
+X		if (p->g->cflags&REG_NEWLINE)
+X			nonnewline(p);
+X		else
+X			EMIT(OANY, 0);
+X		break;
+X	case '[':
+X		p_bracket(p);
+X		break;
+X	case BACKSL|'{':
+X		SETERROR(REG_BADRPT);
+X		break;
+X	case BACKSL|'(':
+X		p->g->nsub++;
+X		subno = p->g->nsub;
+X		if (subno < NPAREN)
+X			p->pbegin[subno] = HERE();
+X		EMIT(OLPAREN, subno);
+X		/* the MORE here is an error heuristic */
+X		if (MORE() && !SEETWO('\\', ')'))
+X			p_bre(p, '\\', ')');
+X		if (subno < NPAREN) {
+X			p->pend[subno] = HERE();
+X			assert(p->pend[subno] != 0);
+X		}
+X		EMIT(ORPAREN, subno);
+X		REQUIRE(EATTWO('\\', ')'), REG_EPAREN);
+X		break;
+X	case BACKSL|')':	/* should not get here -- must be user */
+X	case BACKSL|'}':
+X		SETERROR(REG_EPAREN);
+X		break;
+X	case BACKSL|'1':
+X	case BACKSL|'2':
+X	case BACKSL|'3':
+X	case BACKSL|'4':
+X	case BACKSL|'5':
+X	case BACKSL|'6':
+X	case BACKSL|'7':
+X	case BACKSL|'8':
+X	case BACKSL|'9':
+X		i = (c&~BACKSL) - '0';
+X		assert(i < NPAREN);
+X		if (p->pend[i] != 0) {
+X			assert(i <= p->g->nsub);
+X			EMIT(OBACK_, i);
+X			assert(p->pbegin[i] != 0);
+X			assert(OP(p->strip[p->pbegin[i]]) == OLPAREN);
+X			assert(OP(p->strip[p->pend[i]]) == ORPAREN);
+X			(void) dupl(p, p->pbegin[i]+1, p->pend[i]);
+X			EMIT(O_BACK, i);
+X		} else
+X			SETERROR(REG_ESUBREG);
+X		p->g->backrefs = 1;
+X		break;
+X	case '*':
+X		REQUIRE(starordinary, REG_BADRPT);
+X		/* FALLTHROUGH */
+X	default:
+X		ordinary(p, (char)c);	/* takes off BACKSL, if any */
+X		break;
+X	}
+X
+X	if (EAT('*')) {		/* implemented as +? */
+X		/* this case does not require the (y|) trick, noKLUDGE */
+X		INSERT(OPLUS_, pos);
+X		ASTERN(O_PLUS, pos);
+X		INSERT(OQUEST_, pos);
+X		ASTERN(O_QUEST, pos);
+X	} else if (EATTWO('\\', '{')) {
+X		count = p_count(p);
+X		if (EAT(',')) {
+X			if (MORE() && isdigit(PEEK())) {
+X				count2 = p_count(p);
+X				REQUIRE(count <= count2, REG_BADBR);
+X			} else		/* single number with comma */
+X				count2 = INFINITY;
+X		} else		/* just a single number */
+X			count2 = count;
+X		repeat(p, pos, count, count2);
+X		if (!EATTWO('\\', '}')) {	/* error heuristics */
+X			while (MORE() && !SEETWO('\\', '}'))
+X				NEXT();
+X			REQUIRE(MORE(), REG_EBRACE);
+X			SETERROR(REG_BADBR);
+X		}
+X	} else if (c == (unsigned char)'$')	/* $ (but not \$) ends it */
+X		return(1);
+X
+X	return(0);
+X}
+X
+X/*
+X - p_count - parse a repetition count
+X == static int p_count(register struct parse *p);
+X */
+Xstatic int			/* the value */
+Xp_count(p)
+Xregister struct parse *p;
+X{
+X	register int count = 0;
+X	register int ndigits = 0;
+X
+X	while (MORE() && isdigit(PEEK()) && count <= DUPMAX) {
+X		count = count*10 + (GETNEXT() - '0');
+X		ndigits++;
+X	}
+X
+X	REQUIRE(ndigits > 0 && count <= DUPMAX, REG_BADBR);
+X	return(count);
+X}
+X
+X/*
+X - p_bracket - parse a bracketed character list
+X == static void p_bracket(register struct parse *p);
+X *
+X * Note a significant property of this code:  if the allocset() did SETERROR,
+X * no set operations are done.
+X */
+Xstatic void
+Xp_bracket(p)
+Xregister struct parse *p;
+X{
+X	register cset *cs = allocset(p);
+X	register int invert = 0;
+X
+X	/* Dept of Truly Sickening Special-Case Kludges */
+X	if (p->next + 5 < p->end && strncmp(p->next, "[:<:]]", 6) == 0) {
+X		EMIT(OBOW, 0);
+X		NEXTn(6);
+X		return;
+X	}
+X	if (p->next + 5 < p->end && strncmp(p->next, "[:>:]]", 6) == 0) {
+X		EMIT(OEOW, 0);
+X		NEXTn(6);
+X		return;
+X	}
+X
+X	if (EAT('^'))
+X		invert++;	/* make note to invert set at end */
+X	if (EAT(']'))
+X		CHadd(cs, ']');
+X	else if (EAT('-'))
+X		CHadd(cs, '-');
+X	while (MORE() && PEEK() != ']' && !SEETWO('-', ']'))
+X		p_b_term(p, cs);
+X	if (EAT('-'))
+X		CHadd(cs, '-');
+X	MUSTEAT(']', REG_EBRACK);
+X
+X	if (p->error != 0)	/* don't mess things up further */
+X		return;
+X
+X	if (p->g->cflags&REG_ICASE) {
+X		register int i;
+X		register int ci;
+X
+X		for (i = p->g->csetsize - 1; i >= 0; i--)
+X			if (CHIN(cs, i) && isalpha(i)) {
+X				ci = othercase(i);
+X				if (ci != i)
+X					CHadd(cs, ci);
+X			}
+X		if (cs->multis != NULL)
+X			mccase(p, cs);
+X	}
+X	if (invert) {
+X		register int i;
+X
+X		for (i = p->g->csetsize - 1; i >= 0; i--)
+X			if (CHIN(cs, i))
+X				CHsub(cs, i);
+X			else
+X				CHadd(cs, i);
+X		if (p->g->cflags&REG_NEWLINE)
+X			CHsub(cs, '\n');
+X		if (cs->multis != NULL)
+X			mcinvert(p, cs);
+X	}
+X
+X	assert(cs->multis == NULL);		/* xxx */
+X
+X	if (nch(p, cs) == 1) {		/* optimize singleton sets */
+X		ordinary(p, firstch(p, cs));
+X		freeset(p, cs);
+X	} else
+X		EMIT(OANYOF, freezeset(p, cs));
+X}
+X
+X/*
+X - p_b_term - parse one term of a bracketed character list
+X == static void p_b_term(register struct parse *p, register cset *cs);
+X */
+Xstatic void
+Xp_b_term(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register char c;
+X	register char start, finish;
+X	register int i;
+X
+X	/* classify what we've got */
+X	switch ((MORE()) ? PEEK() : '\0') {
+X	case '[':
+X		c = (MORE2()) ? PEEK2() : '\0';
+X		break;
+X	case '-':
+X		SETERROR(REG_ERANGE);
+X		return;			/* NOTE RETURN */
+X		break;
+X	default:
+X		c = '\0';
+X		break;
+X	}
+X
+X	switch (c) {
+X	case ':':		/* character class */
+X		NEXT2();
+X		REQUIRE(MORE(), REG_EBRACK);
+X		c = PEEK();
+X		REQUIRE(c != '-' && c != ']', REG_ECTYPE);
+X		p_b_cclass(p, cs);
+X		REQUIRE(MORE(), REG_EBRACK);
+X		REQUIRE(EATTWO(':', ']'), REG_ECTYPE);
+X		break;
+X	case '=':		/* equivalence class */
+X		NEXT2();
+X		REQUIRE(MORE(), REG_EBRACK);
+X		c = PEEK();
+X		REQUIRE(c != '-' && c != ']', REG_ECOLLATE);
+X		p_b_eclass(p, cs);
+X		REQUIRE(MORE(), REG_EBRACK);
+X		REQUIRE(EATTWO('=', ']'), REG_ECOLLATE);
+X		break;
+X	default:		/* symbol, ordinary character, or range */
+X/* xxx revision needed for multichar stuff */
+X		start = p_b_symbol(p);
+X		if (SEE('-') && MORE2() && PEEK2() != ']') {
+X			/* range */
+X			NEXT();
+X			if (EAT('-'))
+X				finish = '-';
+X			else
+X				finish = p_b_symbol(p);
+X		} else
+X			finish = start;
+X/* xxx what about signed chars here... */
+X		REQUIRE(start <= finish, REG_ERANGE);
+X		for (i = start; i <= finish; i++)
+X			CHadd(cs, i);
+X		break;
+X	}
+X}
+X
+X/*
+X - p_b_cclass - parse a character-class name and deal with it
+X == static void p_b_cclass(register struct parse *p, register cset *cs);
+X */
+Xstatic void
+Xp_b_cclass(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register char *sp = p->next;
+X	register struct cclass *cp;
+X	register size_t len;
+X	register char *u;
+X	register char c;
+X
+X	while (MORE() && isalpha(PEEK()))
+X		NEXT();
+X	len = p->next - sp;
+X	for (cp = cclasses; cp->name != NULL; cp++)
+X		if (strncmp(cp->name, sp, len) == 0 && cp->name[len] == '\0')
+X			break;
+X	if (cp->name == NULL) {
+X		/* oops, didn't find it */
+X		SETERROR(REG_ECTYPE);
+X		return;
+X	}
+X
+X	u = cp->chars;
+X	while ((c = *u++) != '\0')
+X		CHadd(cs, c);
+X	for (u = cp->multis; *u != '\0'; u += strlen(u) + 1)
+X		MCadd(p, cs, u);
+X}
+X
+X/*
+X - p_b_eclass - parse an equivalence-class name and deal with it
+X == static void p_b_eclass(register struct parse *p, register cset *cs);
+X *
+X * This implementation is incomplete. xxx
+X */
+Xstatic void
+Xp_b_eclass(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register char c;
+X
+X	c = p_b_coll_elem(p, '=');
+X	CHadd(cs, c);
+X}
+X
+X/*
+X - p_b_symbol - parse a character or [..]ed multicharacter collating symbol
+X == static char p_b_symbol(register struct parse *p);
+X */
+Xstatic char			/* value of symbol */
+Xp_b_symbol(p)
+Xregister struct parse *p;
+X{
+X	register char value;
+X
+X	REQUIRE(MORE(), REG_EBRACK);
+X	if (!EATTWO('[', '.'))
+X		return(GETNEXT());
+X
+X	/* collating symbol */
+X	value = p_b_coll_elem(p, '.');
+X	REQUIRE(EATTWO('.', ']'), REG_ECOLLATE);
+X	return(value);
+X}
+X
+X/*
+X - p_b_coll_elem - parse a collating-element name and look it up
+X == static char p_b_coll_elem(register struct parse *p, int endc);
+X */
+Xstatic char			/* value of collating element */
+Xp_b_coll_elem(p, endc)
+Xregister struct parse *p;
+Xint endc;			/* name ended by endc,']' */
+X{
+X	register char *sp = p->next;
+X	register struct cname *cp;
+X	register int len;
+X
+X	while (MORE() && !SEETWO(endc, ']'))
+X		NEXT();
+X	if (!MORE()) {
+X		SETERROR(REG_EBRACK);
+X		return(0);
+X	}
+X	len = p->next - sp;
+X	for (cp = cnames; cp->name != NULL; cp++)
+X		if (strncmp(cp->name, sp, len) == 0 && cp->name[len] == '\0')
+X			return(cp->code);	/* known name */
+X	if (len == 1)
+X		return(*sp);	/* single character */
+X	SETERROR(REG_ECOLLATE);			/* neither */
+X	return(0);
+X}
+X
+X/*
+X - othercase - return the case counterpart of an alphabetic
+X == static char othercase(int ch);
+X */
+Xstatic char			/* if no counterpart, return ch */
+Xothercase(ch)
+Xint ch;
+X{
+X	assert(isalpha(ch));
+X	if (isupper(ch))
+X		return(tolower(ch));
+X	else if (islower(ch))
+X		return(toupper(ch));
+X	else			/* peculiar, but could happen */
+X		return(ch);
+X}
+X
+X/*
+X - bothcases - emit a dualcase version of a two-case character
+X == static void bothcases(register struct parse *p, int ch);
+X *
+X * Boy, is this implementation ever a kludge...
+X */
+Xstatic void
+Xbothcases(p, ch)
+Xregister struct parse *p;
+Xint ch;
+X{
+X	register char *oldnext = p->next;
+X	register char *oldend = p->end;
+X	char bracket[3];
+X
+X	assert(othercase(ch) != ch);	/* p_bracket() would recurse */
+X	p->next = bracket;
+X	p->end = bracket+2;
+X	bracket[0] = ch;
+X	bracket[1] = ']';
+X	bracket[2] = '\0';
+X	p_bracket(p);
+X	assert(p->next == bracket+2);
+X	p->next = oldnext;
+X	p->end = oldend;
+X}
+X
+X/*
+X - ordinary - emit an ordinary character
+X == static void ordinary(register struct parse *p, register int ch);
+X */
+Xstatic void
+Xordinary(p, ch)
+Xregister struct parse *p;
+Xregister int ch;
+X{
+X	register cat_t *cap = p->g->categories;
+X
+X	if ((p->g->cflags&REG_ICASE) && isalpha(ch) && othercase(ch) != ch)
+X		bothcases(p, ch);
+X	else {
+X		EMIT(OCHAR, (unsigned char)ch);
+X		if (cap[ch] == 0)
+X			cap[ch] = p->g->ncategories++;
+X	}
+X}
+X
+X/*
+X - nonnewline - emit REG_NEWLINE version of OANY
+X == static void nonnewline(register struct parse *p);
+X *
+X * Boy, is this implementation ever a kludge...
+X */
+Xstatic void
+Xnonnewline(p)
+Xregister struct parse *p;
+X{
+X	register char *oldnext = p->next;
+X	register char *oldend = p->end;
+X	char bracket[4];
+X
+X	p->next = bracket;
+X	p->end = bracket+3;
+X	bracket[0] = '^';
+X	bracket[1] = '\n';
+X	bracket[2] = ']';
+X	bracket[3] = '\0';
+X	p_bracket(p);
+X	assert(p->next == bracket+3);
+X	p->next = oldnext;
+X	p->end = oldend;
+X}
+X
+X/*
+X - repeat - generate code for a bounded repetition, recursively if needed
+X == static void repeat(register struct parse *p, sopno start, int from, int to);
+X */
+Xstatic void
+Xrepeat(p, start, from, to)
+Xregister struct parse *p;
+Xsopno start;			/* operand from here to end of strip */
+Xint from;			/* repeated from this number */
+Xint to;				/* to this number of times (maybe INFINITY) */
+X{
+X	register sopno finish = HERE();
+X#	define	N	2
+X#	define	INF	3
+X#	define	REP(f, t)	((f)*8 + (t))
+X#	define	MAP(n)	(((n) <= 1) ? (n) : ((n) == INFINITY) ? INF : N)
+X	register sopno copy;
+X
+X	if (p->error != 0)	/* head off possible runaway recursion */
+X		return;
+X
+X	assert(from <= to);
+X
+X	switch (REP(MAP(from), MAP(to))) {
+X	case REP(0, 0):			/* must be user doing this */
+X		DROP(finish-start);	/* drop the operand */
+X		break;
+X	case REP(0, 1):			/* as x{1,1}? */
+X	case REP(0, N):			/* as x{1,n}? */
+X	case REP(0, INF):		/* as x{1,}? */
+X		/* KLUDGE: emit y? as (y|) until subtle bug gets fixed */
+X		INSERT(OCH_, start);		/* offset is wrong... */
+X		repeat(p, start+1, 1, to);
+X		ASTERN(OOR1, start);
+X		AHEAD(start);			/* ... fix it */
+X		EMIT(OOR2, 0);
+X		AHEAD(THERE());
+X		ASTERN(O_CH, THERETHERE());
+X		break;
+X	case REP(1, 1):			/* trivial case */
+X		/* done */
+X		break;
+X	case REP(1, N):			/* as x?x{1,n-1} */
+X		/* KLUDGE: emit y? as (y|) until subtle bug gets fixed */
+X		INSERT(OCH_, start);
+X		ASTERN(OOR1, start);
+X		AHEAD(start);
+X		EMIT(OOR2, 0);			/* offset very wrong... */
+X		AHEAD(THERE());			/* ...so fix it */
+X		ASTERN(O_CH, THERETHERE());
+X		copy = dupl(p, start+1, finish+1);
+X		assert(copy == finish+4);
+X		repeat(p, copy, 1, to-1);
+X		break;
+X	case REP(1, INF):		/* as x+ */
+X		INSERT(OPLUS_, start);
+X		ASTERN(O_PLUS, start);
+X		break;
+X	case REP(N, N):			/* as xx{m-1,n-1} */
+X		copy = dupl(p, start, finish);
+X		repeat(p, copy, from-1, to-1);
+X		break;
+X	case REP(N, INF):		/* as xx{n-1,INF} */
+X		copy = dupl(p, start, finish);
+X		repeat(p, copy, from-1, to);
+X		break;
+X	default:			/* "can't happen" */
+X		SETERROR(REG_ASSERT);	/* just in case */
+X		break;
+X	}
+X}
+X
+X/*
+X - seterr - set an error condition
+X == static int seterr(register struct parse *p, int e);
+X */
+Xstatic int			/* useless but makes type checking happy */
+Xseterr(p, e)
+Xregister struct parse *p;
+Xint e;
+X{
+X	if (p->error == 0)	/* keep earliest error condition */
+X		p->error = e;
+X	p->next = nuls;		/* try to bring things to a halt */
+X	p->end = nuls;
+X	return(0);		/* make the return value well-defined */
+X}
+X
+X/*
+X - allocset - allocate a set of characters for []
+X == static cset *allocset(register struct parse *p);
+X */
+Xstatic cset *
+Xallocset(p)
+Xregister struct parse *p;
+X{
+X	register int no = p->g->ncsets++;
+X	register size_t nc;
+X	register size_t nbytes;
+X	register cset *cs;
+X	register size_t css = (size_t)p->g->csetsize;
+X	register int i;
+X
+X	if (no >= p->ncsalloc) {	/* need another column of space */
+X		p->ncsalloc += CHAR_BIT;
+X		nc = p->ncsalloc;
+X		assert(nc % CHAR_BIT == 0);
+X		nbytes = nc / CHAR_BIT * css;
+X		if (p->g->sets == NULL)
+X			p->g->sets = (cset *)malloc(nc * sizeof(cset));
+X		else
+X			p->g->sets = (cset *)realloc((char *)p->g->sets,
+X							nc * sizeof(cset));
+X		if (p->g->setbits == NULL)
+X			p->g->setbits = (uch *)malloc(nbytes);
+X		else {
+X			p->g->setbits = (uch *)realloc((char *)p->g->setbits,
+X								nbytes);
+X			/* xxx this isn't right if setbits is now NULL */
+X			for (i = 0; i < no; i++)
+X				p->g->sets[i].ptr = p->g->setbits + css*(i/CHAR_BIT);
+X		}
+X		if (p->g->sets != NULL && p->g->setbits != NULL)
+X			(void) memset((char *)p->g->setbits + (nbytes - css),
+X								0, css);
+X		else {
+X			no = 0;
+X			SETERROR(REG_ESPACE);
+X			/* caller's responsibility not to do set ops */
+X		}
+X	}
+X
+X	assert(p->g->sets != NULL);	/* xxx */
+X	cs = &p->g->sets[no];
+X	cs->ptr = p->g->setbits + css*((no)/CHAR_BIT);
+X	cs->mask = 1 << ((no) % CHAR_BIT);
+X	cs->hash = 0;
+X	cs->smultis = 0;
+X	cs->multis = NULL;
+X
+X	return(cs);
+X}
+X
+X/*
+X - freeset - free a now-unused set
+X == static void freeset(register struct parse *p, register cset *cs);
+X */
+Xstatic void
+Xfreeset(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register int i;
+X	register cset *top = &p->g->sets[p->g->ncsets];
+X	register size_t css = (size_t)p->g->csetsize;
+X
+X	for (i = 0; i < css; i++)
+X		CHsub(cs, i);
+X	if (cs == top-1)	/* recover only the easy case */
+X		p->g->ncsets--;
+X}
+X
+X/*
+X - freezeset - final processing on a set of characters
+X == static int freezeset(register struct parse *p, register cset *cs);
+X *
+X * The main task here is merging identical sets.  This is usually a waste
+X * of time (although the hash code minimizes the overhead), but can win
+X * big if REG_ICASE is being used.  REG_ICASE, by the way, is why the hash
+X * is done using addition rather than xor -- all ASCII [aA] sets xor to
+X * the same value!
+X */
+Xstatic int			/* set number */
+Xfreezeset(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register uch h = cs->hash;
+X	register int i;
+X	register cset *top = &p->g->sets[p->g->ncsets];
+X	register cset *cs2;
+X	register size_t css = (size_t)p->g->csetsize;
+X
+X	/* look for an earlier one which is the same */
+X	for (cs2 = &p->g->sets[0]; cs2 < top; cs2++)
+X		if (cs2->hash == h && cs2 != cs) {
+X			/* maybe */
+X			for (i = 0; i < css; i++)
+X				if (!!CHIN(cs2, i) != !!CHIN(cs, i))
+X					break;		/* no */
+X			if (i == css)
+X				break;			/* yes */
+X		}
+X
+X	if (cs2 < top) {	/* found one */
+X		freeset(p, cs);
+X		cs = cs2;
+X	}
+X
+X	return((int)(cs - p->g->sets));
+X}
+X
+X/*
+X - firstch - return first character in a set (which must have at least one)
+X == static int firstch(register struct parse *p, register cset *cs);
+X */
+Xstatic int			/* character; there is no "none" value */
+Xfirstch(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register int i;
+X	register size_t css = (size_t)p->g->csetsize;
+X
+X	for (i = 0; i < css; i++)
+X		if (CHIN(cs, i))
+X			return((char)i);
+X	assert(never);
+X	return(0);		/* arbitrary */
+X}
+X
+X/*
+X - nch - number of characters in a set
+X == static int nch(register struct parse *p, register cset *cs);
+X */
+Xstatic int
+Xnch(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	register int i;
+X	register size_t css = (size_t)p->g->csetsize;
+X	register int n = 0;
+X
+X	for (i = 0; i < css; i++)
+X		if (CHIN(cs, i))
+X			n++;
+X	return(n);
+X}
+X
+X/*
+X - mcadd - add a collating element to a cset
+X == static void mcadd(register struct parse *p, register cset *cs, \
+X ==	register char *cp);
+X */
+Xstatic void
+Xmcadd(p, cs, cp)
+Xregister struct parse *p;
+Xregister cset *cs;
+Xregister char *cp;
+X{
+X	register size_t oldend = cs->smultis;
+X
+X	cs->smultis += strlen(cp) + 1;
+X	if (cs->multis == NULL)
+X		cs->multis = malloc(cs->smultis);
+X	else
+X		cs->multis = realloc(cs->multis, cs->smultis);
+X	if (cs->multis == NULL) {
+X		SETERROR(REG_ESPACE);
+X		return;
+X	}
+X
+X	(void) strcpy(cs->multis + oldend - 1, cp);
+X	cs->multis[cs->smultis - 1] = '\0';
+X}
+X
+X/*
+X - mcsub - subtract a collating element from a cset
+X == static void mcsub(register cset *cs, register char *cp);
+X */
+Xstatic void
+Xmcsub(cs, cp)
+Xregister cset *cs;
+Xregister char *cp;
+X{
+X	register char *fp = mcfind(cs, cp);
+X	register size_t len = strlen(fp);
+X
+X	assert(fp != NULL);
+X	(void) memmove(fp, fp + len + 1,
+X				cs->smultis - (fp + len + 1 - cs->multis));
+X	cs->smultis -= len;
+X
+X	if (cs->smultis == 0) {
+X		free(cs->multis);
+X		cs->multis = NULL;
+X		return;
+X	}
+X
+X	cs->multis = realloc(cs->multis, cs->smultis);
+X	assert(cs->multis != NULL);
+X}
+X
+X/*
+X - mcin - is a collating element in a cset?
+X == static int mcin(register cset *cs, register char *cp);
+X */
+Xstatic int
+Xmcin(cs, cp)
+Xregister cset *cs;
+Xregister char *cp;
+X{
+X	return(mcfind(cs, cp) != NULL);
+X}
+X
+X/*
+X - mcfind - find a collating element in a cset
+X == static char *mcfind(register cset *cs, register char *cp);
+X */
+Xstatic char *
+Xmcfind(cs, cp)
+Xregister cset *cs;
+Xregister char *cp;
+X{
+X	register char *p;
+X
+X	if (cs->multis == NULL)
+X		return(NULL);
+X	for (p = cs->multis; *p != '\0'; p += strlen(p) + 1)
+X		if (strcmp(cp, p) == 0)
+X			return(p);
+X	return(NULL);
+X}
+X
+X/*
+X - mcinvert - invert the list of collating elements in a cset
+X == static void mcinvert(register struct parse *p, register cset *cs);
+X *
+X * This would have to know the set of possibilities.  Implementation
+X * is deferred.
+X */
+Xstatic void
+Xmcinvert(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	assert(cs->multis == NULL);	/* xxx */
+X}
+X
+X/*
+X - mccase - add case counterparts of the list of collating elements in a cset
+X == static void mccase(register struct parse *p, register cset *cs);
+X *
+X * This would have to know the set of possibilities.  Implementation
+X * is deferred.
+X */
+Xstatic void
+Xmccase(p, cs)
+Xregister struct parse *p;
+Xregister cset *cs;
+X{
+X	assert(cs->multis == NULL);	/* xxx */
+X}
+X
+X/*
+X - isinsets - is this character in any sets?
+X == static int isinsets(register struct re_guts *g, int c);
+X */
+Xstatic int			/* predicate */
+Xisinsets(g, c)
+Xregister struct re_guts *g;
+Xint c;
+X{
+X	register uch *col;
+X	register int i;
+X	register int ncols = (g->ncsets+(CHAR_BIT-1)) / CHAR_BIT;
+X	register unsigned uc = (unsigned char)c;
+X
+X	for (i = 0, col = g->setbits; i < ncols; i++, col += g->csetsize)
+X		if (col[uc] != 0)
+X			return(1);
+X	return(0);
+X}
+X
+X/*
+X - samesets - are these two characters in exactly the same sets?
+X == static int samesets(register struct re_guts *g, int c1, int c2);
+X */
+Xstatic int			/* predicate */
+Xsamesets(g, c1, c2)
+Xregister struct re_guts *g;
+Xint c1;
+Xint c2;
+X{
+X	register uch *col;
+X	register int i;
+X	register int ncols = (g->ncsets+(CHAR_BIT-1)) / CHAR_BIT;
+X	register unsigned uc1 = (unsigned char)c1;
+X	register unsigned uc2 = (unsigned char)c2;
+X
+X	for (i = 0, col = g->setbits; i < ncols; i++, col += g->csetsize)
+X		if (col[uc1] != col[uc2])
+X			return(0);
+X	return(1);
+X}
+X
+X/*
+X - categorize - sort out character categories
+X == static void categorize(struct parse *p, register struct re_guts *g);
+X */
+Xstatic void
+Xcategorize(p, g)
+Xstruct parse *p;
+Xregister struct re_guts *g;
+X{
+X	register cat_t *cats = g->categories;
+X	register int c;
+X	register int c2;
+X	register cat_t cat;
+X
+X	/* avoid making error situations worse */
+X	if (p->error != 0)
+X		return;
+X
+X	for (c = CHAR_MIN; c <= CHAR_MAX; c++)
+X		if (cats[c] == 0 && isinsets(g, c)) {
+X			cat = g->ncategories++;
+X			cats[c] = cat;
+X			for (c2 = c+1; c2 <= CHAR_MAX; c2++)
+X				if (cats[c2] == 0 && samesets(g, c, c2))
+X					cats[c2] = cat;
+X		}
+X}
+X
+X/*
+X - dupl - emit a duplicate of a bunch of sops
+X == static sopno dupl(register struct parse *p, sopno start, sopno finish);
+X */
+Xstatic sopno			/* start of duplicate */
+Xdupl(p, start, finish)
+Xregister struct parse *p;
+Xsopno start;			/* from here */
+Xsopno finish;			/* to this less one */
+X{
+X	register sopno ret = HERE();
+X	register sopno len = finish - start;
+X
+X	assert(finish >= start);
+X	if (len == 0)
+X		return(ret);
+X	enlarge(p, p->ssize + len);	/* this many unexpected additions */
+X	assert(p->ssize >= p->slen + len);
+X	(void) memcpy((char *)(p->strip + p->slen),
+X		(char *)(p->strip + start), (size_t)len*sizeof(sop));
+X	p->slen += len;
+X	return(ret);
+X}
+X
+X/*
+X - doemit - emit a strip operator
+X == static void doemit(register struct parse *p, sop op, size_t opnd);
+X *
+X * It might seem better to implement this as a macro with a function as
+X * hard-case backup, but it's just too big and messy unless there are
+X * some changes to the data structures.  Maybe later.
+X */
+Xstatic void
+Xdoemit(p, op, opnd)
+Xregister struct parse *p;
+Xsop op;
+Xsize_t opnd;
+X{
+X	/* avoid making error situations worse */
+X	if (p->error != 0)
+X		return;
+X
+X	/* deal with oversize operands ("can't happen", more or less) */
+X	assert(opnd < 1<<OPSHIFT);
+X
+X	/* deal with undersized strip */
+X	if (p->slen >= p->ssize)
+X		enlarge(p, (p->ssize+1) / 2 * 3);	/* +50% */
+X	assert(p->slen < p->ssize);
+X
+X	/* finally, it's all reduced to the easy case */
+X	p->strip[p->slen++] = SOP(op, opnd);
+X}
+X
+X/*
+X - doinsert - insert a sop into the strip
+X == static void doinsert(register struct parse *p, sop op, size_t opnd, sopno pos);
+X */
+Xstatic void
+Xdoinsert(p, op, opnd, pos)
+Xregister struct parse *p;
+Xsop op;
+Xsize_t opnd;
+Xsopno pos;
+X{
+X	register sopno sn;
+X	register sop s;
+X	register int i;
+X
+X	/* avoid making error situations worse */
+X	if (p->error != 0)
+X		return;
+X
+X	sn = HERE();
+X	EMIT(op, opnd);		/* do checks, ensure space */
+X	assert(HERE() == sn+1);
+X	s = p->strip[sn];
+X
+X	/* adjust paren pointers */
+X	assert(pos > 0);
+X	for (i = 1; i < NPAREN; i++) {
+X		if (p->pbegin[i] >= pos) {
+X			p->pbegin[i]++;
+X		}
+X		if (p->pend[i] >= pos) {
+X			p->pend[i]++;
+X		}
+X	}
+X
+X	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
+X						(HERE()-pos-1)*sizeof(sop));
+X	p->strip[pos] = s;
+X}
+X
+X/*
+X - dofwd - complete a forward reference
+X == static void dofwd(register struct parse *p, sopno pos, sop value);
+X */
+Xstatic void
+Xdofwd(p, pos, value)
+Xregister struct parse *p;
+Xregister sopno pos;
+Xsop value;
+X{
+X	/* avoid making error situations worse */
+X	if (p->error != 0)
+X		return;
+X
+X	assert(value < 1<<OPSHIFT);
+X	p->strip[pos] = OP(p->strip[pos]) | value;
+X}
+X
+X/*
+X - enlarge - enlarge the strip
+X == static void enlarge(register struct parse *p, sopno size);
+X */
+Xstatic void
+Xenlarge(p, size)
+Xregister struct parse *p;
+Xregister sopno size;
+X{
+X	register sop *sp;
+X
+X	if (p->ssize >= size)
+X		return;
+X
+X	sp = (sop *)realloc(p->strip, size*sizeof(sop));
+X	if (sp == NULL) {
+X		SETERROR(REG_ESPACE);
+X		return;
+X	}
+X	p->strip = sp;
+X	p->ssize = size;
+X}
+X
+X/*
+X - stripsnug - compact the strip
+X == static void stripsnug(register struct parse *p, register struct re_guts *g);
+X */
+Xstatic void
+Xstripsnug(p, g)
+Xregister struct parse *p;
+Xregister struct re_guts *g;
+X{
+X	g->nstates = p->slen;
+X	g->strip = (sop *)realloc((char *)p->strip, p->slen * sizeof(sop));
+X	if (g->strip == NULL) {
+X		SETERROR(REG_ESPACE);
+X		g->strip = p->strip;
+X	}
+X}
+X
+X/*
+X - findmust - fill in must and mlen with longest mandatory literal string
+X == static void findmust(register struct parse *p, register struct re_guts *g);
+X *
+X * This algorithm could do fancy things like analyzing the operands of |
+X * for common subsequences.  Someday.  This code is simple and finds most
+X * of the interesting cases.
+X *
+X * Note that must and mlen got initialized during setup.
+X */
+Xstatic void
+Xfindmust(p, g)
+Xstruct parse *p;
+Xregister struct re_guts *g;
+X{
+X	register sop *scan;
+X	sop *start;
+X	register sop *newstart;
+X	register sopno newlen;
+X	register sop s;
+X	register char *cp;
+X	register sopno i;
+X
+X	/* avoid making error situations worse */
+X	if (p->error != 0)
+X		return;
+X
+X	/* find the longest OCHAR sequence in strip */
+X	newlen = 0;
+X	scan = g->strip + 1;
+X	do {
+X		s = *scan++;
+X		switch (OP(s)) {
+X		case OCHAR:		/* sequence member */
+X			if (newlen == 0)		/* new sequence */
+X				newstart = scan - 1;
+X			newlen++;
+X			break;
+X		case OPLUS_:		/* things that don't break one */
+X		case OLPAREN:
+X		case ORPAREN:
+X			break;
+X		case OQUEST_:		/* things that must be skipped */
+X		case OCH_:
+X			scan--;
+X			do {
+X				scan += OPND(s);
+X				s = *scan;
+X				/* assert() interferes w debug printouts */
+X				if (OP(s) != O_QUEST && OP(s) != O_CH &&
+X							OP(s) != OOR2) {
+X					g->iflags |= BAD;
+X					return;
+X				}
+X			} while (OP(s) != O_QUEST && OP(s) != O_CH);
+X			/* fallthrough */
+X		default:		/* things that break a sequence */
+X			if (newlen > g->mlen) {		/* ends one */
+X				start = newstart;
+X				g->mlen = newlen;
+X			}
+X			newlen = 0;
+X			break;
+X		}
+X	} while (OP(s) != OEND);
+X
+X	if (g->mlen == 0)		/* there isn't one */
+X		return;
+X
+X	/* turn it into a character string */
+X	g->must = malloc((size_t)g->mlen + 1);
+X	if (g->must == NULL) {		/* argh; just forget it */
+X		g->mlen = 0;
+X		return;
+X	}
+X	cp = g->must;
+X	scan = start;
+X	for (i = g->mlen; i > 0; i--) {
+X		while (OP(s = *scan++) != OCHAR)
+X			continue;
+X		assert(cp < g->must + g->mlen);
+X		*cp++ = (char)OPND(s);
+X	}
+X	assert(cp == g->must + g->mlen);
+X	*cp++ = '\0';		/* just on general principles */
+X}
+X
+X/*
+X - pluscount - count + nesting
+X == static sopno pluscount(register struct parse *p, register struct re_guts *g);
+X */
+Xstatic sopno			/* nesting depth */
+Xpluscount(p, g)
+Xstruct parse *p;
+Xregister struct re_guts *g;
+X{
+X	register sop *scan;
+X	register sop s;
+X	register sopno plusnest = 0;
+X	register sopno maxnest = 0;
+X
+X	if (p->error != 0)
+X		return(0);	/* there may not be an OEND */
+X
+X	scan = g->strip + 1;
+X	do {
+X		s = *scan++;
+X		switch (OP(s)) {
+X		case OPLUS_:
+X			plusnest++;
+X			break;
+X		case O_PLUS:
+X			if (plusnest > maxnest)
+X				maxnest = plusnest;
+X			plusnest--;
+X			break;
+X		}
+X	} while (OP(s) != OEND);
+X	if (plusnest != 0)
+X		g->iflags |= BAD;
+X	return(maxnest);
+X}
+!
+echo 'regerror.c':
+sed 's/^X//' >'regerror.c' <<'!'
+X#include <sys/types.h>
+X#include <stdio.h>
+X#include <string.h>
+X#include <ctype.h>
+X#include <limits.h>
+X#include <stdlib.h>
+X#include <regex.h>
+X
+X#include "utils.h"
+X#include "regerror.ih"
+X
+X/*
+X = #define	REG_OKAY	 0
+X = #define	REG_NOMATCH	 1
+X = #define	REG_BADPAT	 2
+X = #define	REG_ECOLLATE	 3
+X = #define	REG_ECTYPE	 4
+X = #define	REG_EESCAPE	 5
+X = #define	REG_ESUBREG	 6
+X = #define	REG_EBRACK	 7
+X = #define	REG_EPAREN	 8
+X = #define	REG_EBRACE	 9
+X = #define	REG_BADBR	10
+X = #define	REG_ERANGE	11
+X = #define	REG_ESPACE	12
+X = #define	REG_BADRPT	13
+X = #define	REG_EMPTY	14
+X = #define	REG_ASSERT	15
+X = #define	REG_INVARG	16
+X = #define	REG_ATOI	255	// convert name to number (!)
+X = #define	REG_ITOA	0400	// convert number to name (!)
+X */
+Xstatic struct rerr {
+X	int code;
+X	char *name;
+X	char *explain;
+X} rerrs[] = {
+X	REG_OKAY,	"REG_OKAY",	"no errors detected",
+X	REG_NOMATCH,	"REG_NOMATCH",	"regexec() failed to match",
+X	REG_BADPAT,	"REG_BADPAT",	"invalid regular expression",
+X	REG_ECOLLATE,	"REG_ECOLLATE",	"invalid collating element",
+X	REG_ECTYPE,	"REG_ECTYPE",	"invalid character class",
+X	REG_EESCAPE,	"REG_EESCAPE",	"trailing backslash (\\)",
+X	REG_ESUBREG,	"REG_ESUBREG",	"invalid backreference number",
+X	REG_EBRACK,	"REG_EBRACK",	"brackets ([ ]) not balanced",
+X	REG_EPAREN,	"REG_EPAREN",	"parentheses not balanced",
+X	REG_EBRACE,	"REG_EBRACE",	"braces not balanced",
+X	REG_BADBR,	"REG_BADBR",	"invalid repetition count(s)",
+X	REG_ERANGE,	"REG_ERANGE",	"invalid character range",
+X	REG_ESPACE,	"REG_ESPACE",	"out of memory",
+X	REG_BADRPT,	"REG_BADRPT",	"repetition-operator operand invalid",
+X	REG_EMPTY,	"REG_EMPTY",	"empty (sub)expression",
+X	REG_ASSERT,	"REG_ASSERT",	"\"can't happen\" -- you found a bug",
+X	REG_INVARG,	"REG_INVARG",	"invalid argument to regex routine",
+X	-1,		"",		"*** unknown regexp error code ***",
+X};
+X
+X/*
+X - regerror - the interface to error numbers
+X = extern size_t regerror(int, const regex_t *, char *, size_t);
+X */
+X/* ARGSUSED */
+Xsize_t
+Xregerror(errcode, preg, errbuf, errbuf_size)
+Xint errcode;
+Xconst regex_t *preg;
+Xchar *errbuf;
+Xsize_t errbuf_size;
+X{
+X	register struct rerr *r;
+X	register size_t len;
+X	register int target = errcode &~ REG_ITOA;
+X	register char *s;
+X	char convbuf[50];
+X
+X	if (errcode == REG_ATOI)
+X		s = regatoi(preg, convbuf);
+X	else {
+X		for (r = rerrs; r->code >= 0; r++)
+X			if (r->code == target)
+X				break;
+X	
+X		if (errcode&REG_ITOA) {
+X			if (r->code >= 0)
+X				(void) strcpy(convbuf, r->name);
+X			else
+X				sprintf(convbuf, "REG_0x%x", target);
+X			assert(strlen(convbuf) < sizeof(convbuf));
+X			s = convbuf;
+X		} else
+X			s = r->explain;
+X	}
+X
+X	len = strlen(s) + 1;
+X	if (errbuf_size > 0) {
+X		if (errbuf_size > len)
+X			(void) strcpy(errbuf, s);
+X		else {
+X			(void) strncpy(errbuf, s, errbuf_size-1);
+X			errbuf[errbuf_size-1] = '\0';
+X		}
+X	}
+X
+X	return(len);
+X}
+X
+X/*
+X - regatoi - internal routine to implement REG_ATOI
+X == static char *regatoi(const regex_t *preg, char *localbuf);
+X */
+Xstatic char *
+Xregatoi(preg, localbuf)
+Xconst regex_t *preg;
+Xchar *localbuf;
+X{
+X	register struct rerr *r;
+X
+X	for (r = rerrs; r->code >= 0; r++)
+X		if (strcmp(r->name, preg->re_endp) == 0)
+X			break;
+X	if (r->code < 0)
+X		return("0");
+X
+X	sprintf(localbuf, "%d", r->code);
+X	return(localbuf);
+X}
+!
+echo 'regexec.c':
+sed 's/^X//' >'regexec.c' <<'!'
+X/*
+X * the outer shell of regexec()
+X *
+X * This file includes engine.c *twice*, after muchos fiddling with the
+X * macros that code uses.  This lets the same code operate on two different
+X * representations for state sets.
+X */
+X#include <sys/types.h>
+X#include <stdio.h>
+X#include <stdlib.h>
+X#include <string.h>
+X#include <limits.h>
+X#include <ctype.h>
+X#include <regex.h>
+X
+X#include "utils.h"
+X#include "regex2.h"
+X
+Xstatic int nope = 0;		/* for use in asserts; shuts lint up */
+X
+X/* macros for manipulating states, small version */
+X#define	states	unsigned
+X#define	states1	unsigned	/* for later use in regexec() decision */
+X#define	CLEAR(v)	((v) = 0)
+X#define	SET0(v, n)	((v) &= ~((unsigned)1 << (n)))
+X#define	SET1(v, n)	((v) |= (unsigned)1 << (n))
+X#define	ISSET(v, n)	((v) & ((unsigned)1 << (n)))
+X#define	ASSIGN(d, s)	((d) = (s))
+X#define	EQ(a, b)	((a) == (b))
+X#define	STATEVARS	int dummy	/* dummy version */
+X#define	STATESETUP(m, n)	/* nothing */
+X#define	STATETEARDOWN(m)	/* nothing */
+X#define	SETUP(v)	((v) = 0)
+X#define	onestate	unsigned
+X#define	INIT(o, n)	((o) = (unsigned)1 << (n))
+X#define	INC(o)	((o) <<= 1)
+X#define	ISSTATEIN(v, o)	((v) & (o))
+X/* some abbreviations; note that some of these know variable names! */
+X/* do "if I'm here, I can also be there" etc without branches */
+X#define	FWD(dst, src, n)	((dst) |= ((unsigned)(src)&(here)) << (n))
+X#define	BACK(dst, src, n)	((dst) |= ((unsigned)(src)&(here)) >> (n))
+X#define	ISSETBACK(v, n)	((v) & ((unsigned)here >> (n)))
+X/* function names */
+X#define SNAMES			/* engine.c looks after details */
+X
+X#include "engine.c"
+X
+X/* now undo things */
+X#undef	states
+X#undef	CLEAR
+X#undef	SET0
+X#undef	SET1
+X#undef	ISSET
+X#undef	ASSIGN
+X#undef	EQ
+X#undef	STATEVARS
+X#undef	STATESETUP
+X#undef	STATETEARDOWN
+X#undef	SETUP
+X#undef	onestate
+X#undef	INIT
+X#undef	INC
+X#undef	ISSTATEIN
+X#undef	FWD
+X#undef	BACK
+X#undef	ISSETBACK
+X#undef	SNAMES
+X
+X/* macros for manipulating states, large version */
+X#define	states	char *
+X#define	CLEAR(v)	memset(v, 0, m->g->nstates)
+X#define	SET0(v, n)	((v)[n] = 0)
+X#define	SET1(v, n)	((v)[n] = 1)
+X#define	ISSET(v, n)	((v)[n])
+X#define	ASSIGN(d, s)	memcpy(d, s, m->g->nstates)
+X#define	EQ(a, b)	(memcmp(a, b, m->g->nstates) == 0)
+X#define	STATEVARS	int vn; char *space
+X#define	STATESETUP(m, nv)	{ (m)->space = malloc((nv)*(m)->g->nstates); \
+X				if ((m)->space == NULL) return(REG_ESPACE); \
+X				(m)->vn = 0; }
+X#define	STATETEARDOWN(m)	{ free((m)->space); }
+X#define	SETUP(v)	((v) = &m->space[m->vn++ * m->g->nstates])
+X#define	onestate	int
+X#define	INIT(o, n)	((o) = (n))
+X#define	INC(o)	((o)++)
+X#define	ISSTATEIN(v, o)	((v)[o])
+X/* some abbreviations; note that some of these know variable names! */
+X/* do "if I'm here, I can also be there" etc without branches */
+X#define	FWD(dst, src, n)	((dst)[here+(n)] |= (src)[here])
+X#define	BACK(dst, src, n)	((dst)[here-(n)] |= (src)[here])
+X#define	ISSETBACK(v, n)	((v)[here - (n)])
+X/* function names */
+X#define	LNAMES			/* flag */
+X
+X#include "engine.c"
+X
+X/*
+X - regexec - interface for matching
+X = extern int regexec(const regex_t *, const char *, size_t, \
+X =					regmatch_t [], int);
+X = #define	REG_NOTBOL	00001
+X = #define	REG_NOTEOL	00002
+X = #define	REG_STARTEND	00004
+X = #define	REG_TRACE	00400	// tracing of execution
+X = #define	REG_LARGE	01000	// force large representation
+X = #define	REG_BACKR	02000	// force use of backref code
+X *
+X * We put this here so we can exploit knowledge of the state representation
+X * when choosing which matcher to call.  Also, by this point the matchers
+X * have been prototyped.
+X */
+Xint				/* 0 success, REG_NOMATCH failure */
+Xregexec(preg, string, nmatch, pmatch, eflags)
+Xconst regex_t *preg;
+Xconst char *string;
+Xsize_t nmatch;
+Xregmatch_t pmatch[];
+Xint eflags;
+X{
+X	register struct re_guts *g = preg->re_g;
+X#ifdef REDEBUG
+X#	define	GOODFLAGS(f)	(f)
+X#else
+X#	define	GOODFLAGS(f)	((f)&(REG_NOTBOL|REG_NOTEOL|REG_STARTEND))
+X#endif
+X
+X	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2)
+X		return(REG_BADPAT);
+X	assert(!(g->iflags&BAD));
+X	if (g->iflags&BAD)		/* backstop for no-debug case */
+X		return(REG_BADPAT);
+X	eflags = GOODFLAGS(eflags);
+X
+X	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
+X		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));
+X	else
+X		return(lmatcher(g, (char *)string, nmatch, pmatch, eflags));
+X}
+!
+echo 'regfree.c':
+sed 's/^X//' >'regfree.c' <<'!'
+X#include <sys/types.h>
+X#include <stdio.h>
+X#include <stdlib.h>
+X#include <regex.h>
+X
+X#include "utils.h"
+X#include "regex2.h"
+X
+X/*
+X - regfree - free everything
+X = extern void regfree(regex_t *);
+X */
+Xvoid
+Xregfree(preg)
+Xregex_t *preg;
+X{
+X	register struct re_guts *g;
+X
+X	if (preg->re_magic != MAGIC1)	/* oops */
+X		return;			/* nice to complain, but hard */
+X
+X	g = preg->re_g;
+X	if (g == NULL || g->magic != MAGIC2)	/* oops again */
+X		return;
+X	preg->re_magic = 0;		/* mark it invalid */
+X	g->magic = 0;			/* mark it invalid */
+X
+X	if (g->strip != NULL)
+X		free((char *)g->strip);
+X	if (g->sets != NULL)
+X		free((char *)g->sets);
+X	if (g->setbits != NULL)
+X		free((char *)g->setbits);
+X	if (g->must != NULL)
+X		free(g->must);
+X	free((char *)g);
+X}
+!
+echo 'engine.c':
+sed 's/^X//' >'engine.c' <<'!'
+X/*
+X * The matching engine and friends.  This file is #included by regexec.c
+X * after suitable #defines of a variety of macros used herein, so that
+X * different state representations can be used without duplicating masses
+X * of code.
+X */
+X
+X#ifdef SNAMES
+X#define	matcher	smatcher
+X#define	fast	sfast
+X#define	slow	sslow
+X#define	dissect	sdissect
+X#define	backref	sbackref
+X#define	step	sstep
+X#define	print	sprint
+X#define	at	sat
+X#define	match	smat
+X#endif
+X#ifdef LNAMES
+X#define	matcher	lmatcher
+X#define	fast	lfast
+X#define	slow	lslow
+X#define	dissect	ldissect
+X#define	backref	lbackref
+X#define	step	lstep
+X#define	print	lprint
+X#define	at	lat
+X#define	match	lmat
+X#endif
+X
+X/* another structure passed up and down to avoid zillions of parameters */
+Xstruct match {
+X	struct re_guts *g;
+X	int eflags;
+X	regmatch_t *pmatch;	/* [nsub+1] (0 element unused) */
+X	char *offp;		/* offsets work from here */
+X	char *beginp;		/* start of string -- virtual NUL precedes */
+X	char *endp;		/* end of string -- virtual NUL here */
+X	char *coldp;		/* can be no match starting before here */
+X	char **lastpos;		/* [nplus+1] */
+X	STATEVARS;
+X	states st;		/* current states */
+X	states fresh;		/* states for a fresh start */
+X	states tmp;		/* temporary */
+X	states empty;		/* empty set of states */
+X};
+X
+X#include "engine.ih"
+X
+X#ifdef REDEBUG
+X#define	SP(t, s, c)	print(m, t, s, c, stdout)
+X#define	AT(t, p1, p2, s1, s2)	at(m, t, p1, p2, s1, s2)
+X#define	NOTE(str)	{ if (m->eflags&REG_TRACE) printf("=%s\n", (str)); }
+X#else
+X#define	SP(t, s, c)	/* nothing */
+X#define	AT(t, p1, p2, s1, s2)	/* nothing */
+X#define	NOTE(s)	/* nothing */
+X#endif
+X
+X/*
+X - matcher - the actual matching engine
+X == static int matcher(register struct re_guts *g, char *string, \
+X ==	size_t nmatch, regmatch_t pmatch[], int eflags);
+X */
+Xstatic int			/* 0 success, REG_NOMATCH failure */
+Xmatcher(g, string, nmatch, pmatch, eflags)
+Xregister struct re_guts *g;
+Xchar *string;
+Xsize_t nmatch;
+Xregmatch_t pmatch[];
+Xint eflags;
+X{
+X	register char *endp;
+X	register int i;
+X	struct match mv;
+X	register struct match *m = &mv;
+X	register char *dp;
+X	const register sopno gf = g->firststate+1;	/* +1 for OEND */
+X	const register sopno gl = g->laststate;
+X	char *start;
+X	char *stop;
+X
+X	/* simplify the situation where possible */
+X	if (g->cflags&REG_NOSUB)
+X		nmatch = 0;
+X	if (eflags&REG_STARTEND) {
+X		start = string + pmatch[0].rm_so;
+X		stop = string + pmatch[0].rm_eo;
+X	} else {
+X		start = string;
+X		stop = start + strlen(start);
+X	}
+X	if (stop < start)
+X		return(REG_INVARG);
+X
+X	/* prescreening; this does wonders for this rather slow code */
+X	if (g->must != NULL) {
+X		for (dp = start; dp < stop; dp++)
+X			if (*dp == g->must[0] && stop - dp >= g->mlen &&
+X				memcmp(dp, g->must, (size_t)g->mlen) == 0)
+X				break;
+X		if (dp == stop)		/* we didn't find g->must */
+X			return(REG_NOMATCH);
+X	}
+X
+X	/* match struct setup */
+X	m->g = g;
+X	m->eflags = eflags;
+X	m->pmatch = NULL;
+X	m->lastpos = NULL;
+X	m->offp = string;
+X	m->beginp = start;
+X	m->endp = stop;
+X	STATESETUP(m, 4);
+X	SETUP(m->st);
+X	SETUP(m->fresh);
+X	SETUP(m->tmp);
+X	SETUP(m->empty);
+X	CLEAR(m->empty);
+X
+X	/* this loop does only one repetition except for backrefs */
+X	for (;;) {
+X		endp = fast(m, start, stop, gf, gl);
+X		if (endp == NULL) {		/* a miss */
+X			STATETEARDOWN(m);
+X			return(REG_NOMATCH);
+X		}
+X		if (nmatch == 0 && !g->backrefs)
+X			break;		/* no further info needed */
+X
+X		/* where? */
+X		assert(m->coldp != NULL);
+X		for (;;) {
+X			NOTE("finding start");
+X			endp = slow(m, m->coldp, stop, gf, gl);
+X			if (endp != NULL)
+X				break;
+X			assert(m->coldp < m->endp);
+X			m->coldp++;
+X		}
+X		if (nmatch == 1 && !g->backrefs)
+X			break;		/* no further info needed */
+X
+X		/* oh my, he wants the subexpressions... */
+X		if (m->pmatch == NULL)
+X			m->pmatch = (regmatch_t *)malloc((m->g->nsub + 1) *
+X							sizeof(regmatch_t));
+X		if (m->pmatch == NULL) {
+X			STATETEARDOWN(m);
+X			return(REG_ESPACE);
+X		}
+X		for (i = 1; i <= m->g->nsub; i++)
+X			m->pmatch[i].rm_so = m->pmatch[i].rm_eo = -1;
+X		if (!g->backrefs && !(m->eflags&REG_BACKR)) {
+X			NOTE("dissecting");
+X			dp = dissect(m, m->coldp, endp, gf, gl);
+X		} else {
+X			if (g->nplus > 0 && m->lastpos == NULL)
+X				m->lastpos = (char **)malloc((g->nplus+1) *
+X							sizeof(char *));
+X			if (g->nplus > 0 && m->lastpos == NULL) {
+X				free(m->pmatch);
+X				STATETEARDOWN(m);
+X				return(REG_ESPACE);
+X			}
+X			NOTE("backref dissect");
+X			dp = backref(m, m->coldp, endp, gf, gl, (sopno)0);
+X		}
+X		if (dp != NULL)
+X			break;
+X
+X		/* uh-oh... we couldn't find a subexpression-level match */
+X		assert(g->backrefs);	/* must be back references doing it */
+X		assert(g->nplus == 0 || m->lastpos != NULL);
+X		for (;;) {
+X			if (dp != NULL || endp <= m->coldp)
+X				break;		/* defeat */
+X			NOTE("backoff");
+X			endp = slow(m, m->coldp, endp-1, gf, gl);
+X			if (endp == NULL)
+X				break;		/* defeat */
+X			/* try it on a shorter possibility */
+X#ifndef NDEBUG
+X			for (i = 1; i <= m->g->nsub; i++) {
+X				assert(m->pmatch[i].rm_so == -1);
+X				assert(m->pmatch[i].rm_eo == -1);
+X			}
+X#endif
+X			NOTE("backoff dissect");
+X			dp = backref(m, m->coldp, endp, gf, gl, (sopno)0);
+X		}
+X		assert(dp == NULL || dp == endp);
+X		if (dp != NULL)		/* found a shorter one */
+X			break;
+X
+X		/* despite initial appearances, there is no match here */
+X		NOTE("false alarm");
+X		start = m->coldp + 1;	/* recycle starting later */
+X		assert(start <= stop);
+X	}
+X
+X	/* fill in the details if requested */
+X	if (nmatch > 0) {
+X		pmatch[0].rm_so = m->coldp - m->offp;
+X		pmatch[0].rm_eo = endp - m->offp;
+X	}
+X	if (nmatch > 1) {
+X		assert(m->pmatch != NULL);
+X		for (i = 1; i < nmatch; i++)
+X			if (i <= m->g->nsub)
+X				pmatch[i] = m->pmatch[i];
+X			else {
+X				pmatch[i].rm_so = -1;
+X				pmatch[i].rm_eo = -1;
+X			}
+X	}
+X
+X	if (m->pmatch != NULL)
+X		free((char *)m->pmatch);
+X	if (m->lastpos != NULL)
+X		free((char *)m->lastpos);
+X	STATETEARDOWN(m);
+X	return(0);
+X}
+X
+X/*
+X - dissect - figure out what matched what, no back references
+X == static char *dissect(register struct match *m, char *start, \
+X ==	char *stop, sopno startst, sopno stopst);
+X */
+Xstatic char *			/* == stop (success) always */
+Xdissect(m, start, stop, startst, stopst)
+Xregister struct match *m;
+Xchar *start;
+Xchar *stop;
+Xsopno startst;
+Xsopno stopst;
+X{
+X	register int i;
+X	register sopno ss;	/* start sop of current subRE */
+X	register sopno es;	/* end sop of current subRE */
+X	register char *sp;	/* start of string matched by it */
+X	register char *stp;	/* string matched by it cannot pass here */
+X	register char *rest;	/* start of rest of string */
+X	register char *tail;	/* string unmatched by rest of RE */
+X	register sopno ssub;	/* start sop of subsubRE */
+X	register sopno esub;	/* end sop of subsubRE */
+X	register char *ssp;	/* start of string matched by subsubRE */
+X	register char *sep;	/* end of string matched by subsubRE */
+X	register char *oldssp;	/* previous ssp */
+X	register char *dp;
+X
+X	AT("diss", start, stop, startst, stopst);
+X	sp = start;
+X	for (ss = startst; ss < stopst; ss = es) {
+X		/* identify end of subRE */
+X		es = ss;
+X		switch (OP(m->g->strip[es])) {
+X		case OPLUS_:
+X		case OQUEST_:
+X			es += OPND(m->g->strip[es]);
+X			break;
+X		case OCH_:
+X			while (OP(m->g->strip[es]) != O_CH)
+X				es += OPND(m->g->strip[es]);
+X			break;
+X		}
+X		es++;
+X
+X		/* figure out what it matched */
+X		switch (OP(m->g->strip[ss])) {
+X		case OEND:
+X			assert(nope);
+X			break;
+X		case OCHAR:
+X			sp++;
+X			break;
+X		case OBOL:
+X		case OEOL:
+X		case OBOW:
+X		case OEOW:
+X			break;
+X		case OANY:
+X		case OANYOF:
+X			sp++;
+X			break;
+X		case OBACK_:
+X		case O_BACK:
+X			assert(nope);
+X			break;
+X		/* cases where length of match is hard to find */
+X		case OQUEST_:
+X			stp = stop;
+X			for (;;) {
+X				/* how long could this one be? */
+X				rest = slow(m, sp, stp, ss, es);
+X				assert(rest != NULL);	/* it did match */
+X				/* could the rest match the rest? */
+X				tail = slow(m, rest, stop, es, stopst);
+X				if (tail == stop)
+X					break;		/* yes! */
+X				/* no -- try a shorter match for this one */
+X				stp = rest - 1;
+X				assert(stp >= sp);	/* it did work */
+X			}
+X			ssub = ss + 1;
+X			esub = es - 1;
+X			/* did innards match? */
+X			if (slow(m, sp, rest, ssub, esub) != NULL) {
+X				dp = dissect(m, sp, rest, ssub, esub);
+X				assert(dp == rest);
+X			} else		/* no */
+X				assert(sp == rest);
+X			sp = rest;
+X			break;
+X		case OPLUS_:
+X			stp = stop;
+X			for (;;) {
+X				/* how long could this one be? */
+X				rest = slow(m, sp, stp, ss, es);
+X				assert(rest != NULL);	/* it did match */
+X				/* could the rest match the rest? */
+X				tail = slow(m, rest, stop, es, stopst);
+X				if (tail == stop)
+X					break;		/* yes! */
+X				/* no -- try a shorter match for this one */
+X				stp = rest - 1;
+X				assert(stp >= sp);	/* it did work */
+X			}
+X			ssub = ss + 1;
+X			esub = es - 1;
+X			ssp = sp;
+X			oldssp = ssp;
+X			for (;;) {	/* find last match of innards */
+X				sep = slow(m, ssp, rest, ssub, esub);
+X				if (sep == NULL || sep == ssp)
+X					break;	/* failed or matched null */
+X				oldssp = ssp;	/* on to next try */
+X				ssp = sep;
+X			}
+X			if (sep == NULL) {
+X				/* last successful match */
+X				sep = ssp;
+X				ssp = oldssp;
+X			}
+X			assert(sep == rest);	/* must exhaust substring */
+X			assert(slow(m, ssp, sep, ssub, esub) == rest);
+X			dp = dissect(m, ssp, sep, ssub, esub);
+X			assert(dp == sep);
+X			sp = rest;
+X			break;
+X		case OCH_:
+X			stp = stop;
+X			for (;;) {
+X				/* how long could this one be? */
+X				rest = slow(m, sp, stp, ss, es);
+X				assert(rest != NULL);	/* it did match */
+X				/* could the rest match the rest? */
+X				tail = slow(m, rest, stop, es, stopst);
+X				if (tail == stop)
+X					break;		/* yes! */
+X				/* no -- try a shorter match for this one */
+X				stp = rest - 1;
+X				assert(stp >= sp);	/* it did work */
+X			}
+X			ssub = ss + 1;
+X			esub = ss + OPND(m->g->strip[ss]) - 1;
+X			assert(OP(m->g->strip[esub]) == OOR1);
+X			for (;;) {	/* find first matching branch */
+X				if (slow(m, sp, rest, ssub, esub) == rest)
+X					break;	/* it matched all of it */
+X				/* that one missed, try next one */
+X				assert(OP(m->g->strip[esub]) == OOR1);
+X				esub++;
+X				assert(OP(m->g->strip[esub]) == OOR2);
+X				ssub = esub + 1;
+X				esub += OPND(m->g->strip[esub]);
+X				if (OP(m->g->strip[esub]) == OOR2)
+X					esub--;
+X				else
+X					assert(OP(m->g->strip[esub]) == O_CH);
+X			}
+X			dp = dissect(m, sp, rest, ssub, esub);
+X			assert(dp == rest);
+X			sp = rest;
+X			break;
+X		case O_PLUS:
+X		case O_QUEST:
+X		case OOR1:
+X		case OOR2:
+X		case O_CH:
+X			assert(nope);
+X			break;
+X		case OLPAREN:
+X			i = OPND(m->g->strip[ss]);
+X			assert(0 < i && i <= m->g->nsub);
+X			m->pmatch[i].rm_so = sp - m->offp;
+X			break;
+X		case ORPAREN:
+X			i = OPND(m->g->strip[ss]);
+X			assert(0 < i && i <= m->g->nsub);
+X			m->pmatch[i].rm_eo = sp - m->offp;
+X			break;
+X		default:		/* uh oh */
+X			assert(nope);
+X			break;
+X		}
+X	}
+X
+X	assert(sp == stop);
+X	return(sp);
+X}
+X
+X/*
+X - backref - figure out what matched what, figuring in back references
+X == static char *backref(register struct match *m, char *start, \
+X ==	char *stop, sopno startst, sopno stopst, sopno lev);
+X */
+Xstatic char *			/* == stop (success) or NULL (failure) */
+Xbackref(m, start, stop, startst, stopst, lev)
+Xregister struct match *m;
+Xchar *start;
+Xchar *stop;
+Xsopno startst;
+Xsopno stopst;
+Xsopno lev;			/* PLUS nesting level */
+X{
+X	register int i;
+X	register sopno ss;	/* start sop of current subRE */
+X	register char *sp;	/* start of string matched by it */
+X	register sopno ssub;	/* start sop of subsubRE */
+X	register sopno esub;	/* end sop of subsubRE */
+X	register char *ssp;	/* start of string matched by subsubRE */
+X	register char *dp;
+X	register size_t len;
+X	register int hard;
+X	register sop s;
+X	register regoff_t offsave;
+X	register cset *cs;
+X
+X	AT("back", start, stop, startst, stopst);
+X	sp = start;
+X
+X	/* get as far as we can with easy stuff */
+X	hard = 0;
+X	for (ss = startst; !hard && ss < stopst; ss++)
+X		switch (OP(s = m->g->strip[ss])) {
+X		case OCHAR:
+X			if (sp == stop || *sp++ != (char)OPND(s))
+X				return(NULL);
+X			break;
+X		case OANY:
+X			if (sp == stop)
+X				return(NULL);
+X			sp++;
+X			break;
+X		case OANYOF:
+X			cs = &m->g->sets[OPND(s)];
+X			if (sp == stop || !CHIN(cs, *sp++))
+X				return(NULL);
+X			break;
+X		case OBOL:
+X			if ( (sp == m->beginp && !(m->eflags&REG_NOTBOL)) ||
+X					(sp < m->endp && *(sp-1) == '\n' &&
+X						(m->g->cflags&REG_NEWLINE)) )
+X				{ /* yes */ }
+X			else
+X				return(NULL);
+X			break;
+X		case OEOL:
+X			if ( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
+X					(sp < m->endp && *sp == '\n' &&
+X						(m->g->cflags&REG_NEWLINE)) )
+X				{ /* yes */ }
+X			else
+X				return(NULL);
+X			break;
+X		case OBOW:
+X			if (( (sp == m->beginp && !(m->eflags&REG_NOTBOL)) ||
+X					(sp < m->endp && *(sp-1) == '\n' &&
+X						(m->g->cflags&REG_NEWLINE)) ||
+X					(sp > m->beginp &&
+X							!ISWORD(*(sp-1))) ) &&
+X					(sp < m->endp && ISWORD(*sp)) )
+X				{ /* yes */ }
+X			else
+X				return(NULL);
+X			break;
+X		case OEOW:
+X			if (( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
+X					(sp < m->endp && *sp == '\n' &&
+X						(m->g->cflags&REG_NEWLINE)) ||
+X					(sp < m->endp && !ISWORD(*sp)) ) &&
+X					(sp > m->beginp && ISWORD(*(sp-1))) )
+X				{ /* yes */ }
+X			else
+X				return(NULL);
+X			break;
+X		case O_QUEST:
+X			break;
+X		case OOR1:	/* matches null but needs to skip */
+X			ss++;
+X			s = m->g->strip[ss];
+X			do {
+X				assert(OP(s) == OOR2);
+X				ss += OPND(s);
+X			} while (OP(s = m->g->strip[ss]) != O_CH);
+X			/* note that the ss++ gets us past the O_CH */
+X			break;
+X		default:	/* have to make a choice */
+X			hard = 1;
+X			break;
+X		}
+X	if (!hard) {		/* that was it! */
+X		if (sp != stop)
+X			return(NULL);
+X		return(sp);
+X	}
+X	ss--;			/* adjust for the for's final increment */
+X
+X	/* the hard stuff */
+X	AT("hard", sp, stop, ss, stopst);
+X	s = m->g->strip[ss];
+X	switch (OP(s)) {
+X	case OBACK_:		/* the vilest depths */
+X		i = OPND(s);
+X		assert(0 < i && i <= m->g->nsub);
+X		if (m->pmatch[i].rm_eo == -1)
+X			return(NULL);
+X		assert(m->pmatch[i].rm_so != -1);
+X		len = m->pmatch[i].rm_eo - m->pmatch[i].rm_so;
+X		assert(stop - m->beginp >= len);
+X		if (sp > stop - len)
+X			return(NULL);	/* not enough left to match */
+X		ssp = m->offp + m->pmatch[i].rm_so;
+X		if (memcmp(sp, ssp, len) != 0)
+X			return(NULL);
+X		while (m->g->strip[ss] != SOP(O_BACK, i))
+X			ss++;
+X		return(backref(m, sp+len, stop, ss+1, stopst, lev));
+X		break;
+X	case OQUEST_:		/* to null or not */
+X		dp = backref(m, sp, stop, ss+1, stopst, lev);
+X		if (dp != NULL)
+X			return(dp);	/* not */
+X		return(backref(m, sp, stop, ss+OPND(s)+1, stopst, lev));
+X		break;
+X	case OPLUS_:
+X		assert(m->lastpos != NULL);
+X		assert(lev+1 <= m->g->nplus);
+X		m->lastpos[lev+1] = sp;
+X		return(backref(m, sp, stop, ss+1, stopst, lev+1));
+X		break;
+X	case O_PLUS:
+X		if (sp == m->lastpos[lev])	/* last pass matched null */
+X			return(backref(m, sp, stop, ss+1, stopst, lev-1));
+X		/* try another pass */
+X		m->lastpos[lev] = sp;
+X		dp = backref(m, sp, stop, ss-OPND(s)+1, stopst, lev);
+X		if (dp == NULL)
+X			return(backref(m, sp, stop, ss+1, stopst, lev-1));
+X		else
+X			return(dp);
+X		break;
+X	case OCH_:		/* find the right one, if any */
+X		ssub = ss + 1;
+X		esub = ss + OPND(s) - 1;
+X		assert(OP(m->g->strip[esub]) == OOR1);
+X		for (;;) {	/* find first matching branch */
+X			dp = backref(m, sp, stop, ssub, esub, lev);
+X			if (dp != NULL)
+X				return(dp);
+X			/* that one missed, try next one */
+X			if (OP(m->g->strip[esub]) == O_CH)
+X				return(NULL);	/* there is none */
+X			esub++;
+X			assert(OP(m->g->strip[esub]) == OOR2);
+X			ssub = esub + 1;
+X			esub += OPND(m->g->strip[esub]);
+X			if (OP(m->g->strip[esub]) == OOR2)
+X				esub--;
+X			else
+X				assert(OP(m->g->strip[esub]) == O_CH);
+X		}
+X		break;
+X	case OLPAREN:		/* must undo assignment if rest fails */
+X		i = OPND(s);
+X		assert(0 < i && i <= m->g->nsub);
+X		offsave = m->pmatch[i].rm_so;
+X		m->pmatch[i].rm_so = sp - m->offp;
+X		dp = backref(m, sp, stop, ss+1, stopst, lev);
+X		if (dp != NULL)
+X			return(dp);
+X		m->pmatch[i].rm_so = offsave;
+X		return(NULL);
+X		break;
+X	case ORPAREN:		/* must undo assignment if rest fails */
+X		i = OPND(s);
+X		assert(0 < i && i <= m->g->nsub);
+X		offsave = m->pmatch[i].rm_eo;
+X		m->pmatch[i].rm_eo = sp - m->offp;
+X		dp = backref(m, sp, stop, ss+1, stopst, lev);
+X		if (dp != NULL)
+X			return(dp);
+X		m->pmatch[i].rm_eo = offsave;
+X		return(NULL);
+X		break;
+X	default:		/* uh oh */
+X		assert(nope);
+X		break;
+X	}
+X
+X	/* "can't happen" */
+X	assert(nope);
+X	/* NOTREACHED */
+X	return((char *)NULL);	/* dummy */
+X}
+X
+X/*
+X - fast - step through the string at top speed
+X == static char *fast(register struct match *m, char *start, \
+X ==	char *stop, sopno startst, sopno stopst);
+X */
+Xstatic char *			/* where tentative match ended, or NULL */
+Xfast(m, start, stop, startst, stopst)
+Xregister struct match *m;
+Xchar *start;
+Xchar *stop;
+Xsopno startst;
+Xsopno stopst;
+X{
+X	register states st = m->st;
+X	register states fresh = m->fresh;
+X	register states tmp = m->tmp;
+X	register char *p = start;
+X	register int c = (start == m->beginp) ? OUT : *(start-1);
+X	register int lastc;	/* previous c */
+X	register int flagch;
+X	register int i;
+X	register char *coldp;	/* last p after which no match was underway */
+X
+X	CLEAR(st);
+X	SET1(st, startst);
+X	st = step(m->g, startst, stopst, st, NOTHING, st);
+X	ASSIGN(fresh, st);
+X	SP("start", st, *p);
+X	coldp = NULL;
+X	for (;;) {
+X		/* next character */
+X		lastc = c;
+X		c = (p == m->endp) ? OUT : *p;
+X		if (EQ(st, fresh))
+X			coldp = p;
+X
+X		/* is there an EOL and/or BOL between lastc and c? */
+X		flagch = '\0';
+X		i = 0;
+X		if ( (lastc == '\n' && m->g->cflags&REG_NEWLINE) ||
+X				(lastc == OUT && !(m->eflags&REG_NOTBOL)) ) {
+X			flagch = BOL;
+X			i = m->g->nbol;
+X		}
+X		if ( (c == '\n' && m->g->cflags&REG_NEWLINE) ||
+X				(c == OUT && !(m->eflags&REG_NOTEOL)) ) {
+X			flagch = (flagch == BOL) ? BOLEOL : EOL;
+X			i += m->g->neol;
+X		}
+X		if (i != 0) {
+X			for (; i > 0; i--)
+X				st = step(m->g, startst, stopst, st, flagch, st);
+X			SP("boleol", st, c);
+X		}
+X
+X		/* how about a word boundary? */
+X		if ( (flagch == BOL || (lastc != OUT && !ISWORD(lastc))) &&
+X					(c != OUT && ISWORD(c)) ) {
+X			flagch = BOW;
+X		}
+X		if ( (lastc != OUT && ISWORD(lastc)) &&
+X				(flagch == EOL || (c != OUT && !ISWORD(c))) ) {
+X			flagch = EOW;
+X		}
+X		if (flagch == BOW || flagch == EOW) {
+X			st = step(m->g, startst, stopst, st, flagch, st);
+X			SP("boweow", st, c);
+X		}
+X
+X		/* are we done? */
+X		if (ISSET(st, stopst) || p == stop)
+X			break;		/* NOTE BREAK OUT */
+X
+X		/* no, we must deal with this character */
+X		ASSIGN(tmp, st);
+X		ASSIGN(st, fresh);
+X		assert(c != OUT);
+X		st = step(m->g, startst, stopst, tmp, c, st);
+X		SP("aft", st, c);
+X		assert(EQ(step(m->g, startst, stopst, st, NOTHING, st), st));
+X		p++;
+X	}
+X
+X	assert(coldp != NULL);
+X	m->coldp = coldp;
+X	if (ISSET(st, stopst))
+X		return(p+1);
+X	else
+X		return(NULL);
+X}
+X
+X/*
+X - slow - step through the string more deliberately
+X == static char *slow(register struct match *m, char *start, \
+X ==	char *stop, sopno startst, sopno stopst);
+X */
+Xstatic char *			/* where it ended */
+Xslow(m, start, stop, startst, stopst)
+Xregister struct match *m;
+Xchar *start;
+Xchar *stop;
+Xsopno startst;
+Xsopno stopst;
+X{
+X	register states st = m->st;
+X	register states empty = m->empty;
+X	register states tmp = m->tmp;
+X	register char *p = start;
+X	register int c = (start == m->beginp) ? OUT : *(start-1);
+X	register int lastc;	/* previous c */
+X	register int flagch;
+X	register int i;
+X	register char *matchp;	/* last p at which a match ended */
+X
+X	AT("slow", start, stop, startst, stopst);
+X	CLEAR(st);
+X	SET1(st, startst);
+X	SP("sstart", st, *p);
+X	st = step(m->g, startst, stopst, st, NOTHING, st);
+X	matchp = NULL;
+X	for (;;) {
+X		/* next character */
+X		lastc = c;
+X		c = (p == m->endp) ? OUT : *p;
+X
+X		/* is there an EOL and/or BOL between lastc and c? */
+X		flagch = '\0';
+X		i = 0;
+X		if ( (lastc == '\n' && m->g->cflags&REG_NEWLINE) ||
+X				(lastc == OUT && !(m->eflags&REG_NOTBOL)) ) {
+X			flagch = BOL;
+X			i = m->g->nbol;
+X		}
+X		if ( (c == '\n' && m->g->cflags&REG_NEWLINE) ||
+X				(c == OUT && !(m->eflags&REG_NOTEOL)) ) {
+X			flagch = (flagch == BOL) ? BOLEOL : EOL;
+X			i += m->g->neol;
+X		}
+X		if (i != 0) {
+X			for (; i > 0; i--)
+X				st = step(m->g, startst, stopst, st, flagch, st);
+X			SP("sboleol", st, c);
+X		}
+X
+X		/* how about a word boundary? */
+X		if ( (flagch == BOL || (lastc != OUT && !ISWORD(lastc))) &&
+X					(c != OUT && ISWORD(c)) ) {
+X			flagch = BOW;
+X		}
+X		if ( (lastc != OUT && ISWORD(lastc)) &&
+X				(flagch == EOL || (c != OUT && !ISWORD(c))) ) {
+X			flagch = EOW;
+X		}
+X		if (flagch == BOW || flagch == EOW) {
+X			st = step(m->g, startst, stopst, st, flagch, st);
+X			SP("sboweow", st, c);
+X		}
+X
+X		/* are we done? */
+X		if (ISSET(st, stopst))
+X			matchp = p;
+X		if (EQ(st, empty) || p == stop)
+X			break;		/* NOTE BREAK OUT */
+X
+X		/* no, we must deal with this character */
+X		ASSIGN(tmp, st);
+X		ASSIGN(st, empty);
+X		assert(c != OUT);
+X		st = step(m->g, startst, stopst, tmp, c, st);
+X		SP("saft", st, c);
+X		assert(EQ(step(m->g, startst, stopst, st, NOTHING, st), st));
+X		p++;
+X	}
+X
+X	return(matchp);
+X}
+X
+X
+X/*
+X - step - map set of states reachable before char to set reachable after
+X == static states step(register struct re_guts *g, sopno start, sopno stop, \
+X ==	register states bef, int ch, register states aft);
+X == #define	BOL	(OUT+1)
+X == #define	EOL	(BOL+1)
+X == #define	BOLEOL	(BOL+2)
+X == #define	NOTHING	(BOL+3)
+X == #define	BOW	(BOL+4)
+X == #define	EOW	(BOL+5)
+X == #define	CODEMAX	(BOL+5)		// highest code used
+X == #define	NONCHAR(c)	((c) > CHAR_MAX)
+X == #define	NNONCHAR	(CODEMAX-CHAR_MAX)
+X */
+Xstatic states
+Xstep(g, start, stop, bef, ch, aft)
+Xregister struct re_guts *g;
+Xsopno start;			/* start state within strip */
+Xsopno stop;			/* state after stop state within strip */
+Xregister states bef;		/* states reachable before */
+Xint ch;				/* character or NONCHAR code */
+Xregister states aft;		/* states already known reachable after */
+X{
+X	register cset *cs;
+X	register sop s;
+X	register sopno pc;
+X	register onestate here;		/* note, macros know this name */
+X	register sopno look;
+X	register long i;
+X
+X	for (pc = start, INIT(here, pc); pc != stop; pc++, INC(here)) {
+X		s = g->strip[pc];
+X		switch (OP(s)) {
+X		case OEND:
+X			assert(pc == stop-1);
+X			break;
+X		case OCHAR:
+X			/* only characters can match */
+X			assert(!NONCHAR(ch) || ch != (char)OPND(s));
+X			if (ch == (char)OPND(s))
+X				FWD(aft, bef, 1);
+X			break;
+X		case OBOL:
+X			if (ch == BOL || ch == BOLEOL)
+X				FWD(aft, bef, 1);
+X			break;
+X		case OEOL:
+X			if (ch == EOL || ch == BOLEOL)
+X				FWD(aft, bef, 1);
+X			break;
+X		case OBOW:
+X			if (ch == BOW)
+X				FWD(aft, bef, 1);
+X			break;
+X		case OEOW:
+X			if (ch == EOW)
+X				FWD(aft, bef, 1);
+X			break;
+X		case OANY:
+X			if (!NONCHAR(ch))
+X				FWD(aft, bef, 1);
+X			break;
+X		case OANYOF:
+X			cs = &g->sets[OPND(s)];
+X			if (!NONCHAR(ch) && CHIN(cs, ch))
+X				FWD(aft, bef, 1);
+X			break;
+X		case OBACK_:		/* ignored here */
+X		case O_BACK:
+X			FWD(aft, aft, 1);
+X			break;
+X		case OPLUS_:		/* forward, this is just an empty */
+X			FWD(aft, aft, 1);
+X			break;
+X		case O_PLUS:		/* both forward and back */
+X			FWD(aft, aft, 1);
+X			i = ISSETBACK(aft, OPND(s));
+X			BACK(aft, aft, OPND(s));
+X			if (!i && ISSETBACK(aft, OPND(s))) {
+X				/* oho, must reconsider loop body */
+X				pc -= OPND(s) + 1;
+X				INIT(here, pc);
+X			}
+X			break;
+X		case OQUEST_:		/* two branches, both forward */
+X			FWD(aft, aft, 1);
+X			FWD(aft, aft, OPND(s));
+X			break;
+X		case O_QUEST:		/* just an empty */
+X			FWD(aft, aft, 1);
+X			break;
+X		case OLPAREN:		/* not significant here */
+X		case ORPAREN:
+X			FWD(aft, aft, 1);
+X			break;
+X		case OCH_:		/* mark the first two branches */
+X			FWD(aft, aft, 1);
+X			assert(OP(g->strip[pc+OPND(s)]) == OOR2);
+X			FWD(aft, aft, OPND(s));
+X			break;
+X		case OOR1:		/* done a branch, find the O_CH */
+X			if (ISSTATEIN(aft, here)) {
+X				for (look = 1;
+X						OP(s = g->strip[pc+look]) != O_CH;
+X						look += OPND(s))
+X					assert(OP(s) == OOR2);
+X				FWD(aft, aft, look);
+X			}
+X			break;
+X		case OOR2:		/* propagate OCH_'s marking */
+X			FWD(aft, aft, 1);
+X			if (OP(g->strip[pc+OPND(s)]) != O_CH) {
+X				assert(OP(g->strip[pc+OPND(s)]) == OOR2);
+X				FWD(aft, aft, OPND(s));
+X			}
+X			break;
+X		case O_CH:		/* just empty */
+X			FWD(aft, aft, 1);
+X			break;
+X		default:		/* ooooops... */
+X			assert(nope);
+X			break;
+X		}
+X	}
+X
+X	return(aft);
+X}
+X
+X#ifdef REDEBUG
+X/*
+X - print - print a set of states
+X == #ifdef REDEBUG
+X == static void print(struct match *m, char *caption, states st, \
+X ==	int ch, FILE *d);
+X == #endif
+X */
+Xstatic void
+Xprint(m, caption, st, ch, d)
+Xstruct match *m;
+Xchar *caption;
+Xstates st;
+Xint ch;
+XFILE *d;
+X{
+X	register struct re_guts *g = m->g;
+X	register int i;
+X	register int first = 1;
+X
+X	if (!(m->eflags&REG_TRACE))
+X		return;
+X
+X	fprintf(d, "%s", caption);
+X	if (ch != '\0')
+X		fprintf(d, " %s", pchar(ch));
+X	for (i = 0; i < g->nstates; i++)
+X		if (ISSET(st, i)) {
+X			fprintf(d, "%s%d", (first) ? "\t" : ", ", i);
+X			first = 0;
+X		}
+X	fprintf(d, "\n");
+X}
+X
+X/* 
+X - at - print current situation
+X == #ifdef REDEBUG
+X == static void at(struct match *m, char *title, char *start, char *stop, \
+X ==						sopno startst, sopno stopst);
+X == #endif
+X */
+Xstatic void
+Xat(m, title, start, stop, startst, stopst)
+Xstruct match *m;
+Xchar *title;
+Xchar *start;
+Xchar *stop;
+Xsopno startst;
+Xsopno stopst;
+X{
+X	if (!(m->eflags&REG_TRACE))
+X		return;
+X
+X	printf("%s %s-", title, pchar(*start));
+X	printf("%s ", pchar(*stop));
+X	printf("%ld-%ld\n", (long)startst, (long)stopst);
+X}
+X
+X#ifndef PCHARDONE
+X#define	PCHARDONE	/* never again */
+X/*
+X - pchar - make a character printable
+X == #ifdef REDEBUG
+X == static char *pchar(int ch);
+X == #endif
+X *
+X * Is this identical to regchar() over in debug.c?  Well, yes.  But a
+X * duplicate here avoids having a debugging-capable regexec.o tied to
+X * a matching debug.o, and this is convenient.  It all disappears in
+X * the non-debug compilation anyway, so it doesn't matter much.
+X */
+Xstatic char *			/* -> representation */
+Xpchar(ch)
+Xint ch;
+X{
+X	static char pbuf[10];
+X
+X	if (isprint(ch) || ch == ' ')
+X		sprintf(pbuf, "%c", ch);
+X	else
+X		sprintf(pbuf, "\\%o", ch);
+X	return(pbuf);
+X}
+X#endif
+X#endif
+X
+X#undef	matcher
+X#undef	fast
+X#undef	slow
+X#undef	dissect
+X#undef	backref
+X#undef	step
+X#undef	print
+X#undef	at
+X#undef	match
+!
+echo 'debug.c':
+sed 's/^X//' >'debug.c' <<'!'
+X#include <stdio.h>
+X#include <string.h>
+X#include <ctype.h>
+X#include <limits.h>
+X#include <stdlib.h>
+X#include <sys/types.h>
+X#include <regex.h>
+X
+X#include "utils.h"
+X#include "regex2.h"
+X#include "debug.ih"
+X
+X/*
+X - regprint - print a regexp for debugging
+X == void regprint(regex_t *r, FILE *d);
+X */
+Xvoid
+Xregprint(r, d)
+Xregex_t *r;
+XFILE *d;
+X{
+X	register struct re_guts *g = r->re_g;
+X	register int i;
+X	register int c;
+X	register int last;
+X	int nincat[NC];
+X
+X	fprintf(d, "%ld states, %d categories", (long)g->nstates,
+X							g->ncategories);
+X	fprintf(d, ", first %ld last %ld", (long)g->firststate,
+X						(long)g->laststate);
+X	if (g->iflags&USEBOL)
+X		fprintf(d, ", USEBOL");
+X	if (g->iflags&USEEOL)
+X		fprintf(d, ", USEEOL");
+X	if (g->iflags&BAD)
+X		fprintf(d, ", BAD");
+X	if (g->nsub > 0)
+X		fprintf(d, ", nsub=%ld", (long)g->nsub);
+X	if (g->must != NULL)
+X		fprintf(d, ", must(%ld) `%*s'", (long)g->mlen, (int)g->mlen,
+X								g->must);
+X	if (g->backrefs)
+X		fprintf(d, ", backrefs");
+X	if (g->nplus > 0)
+X		fprintf(d, ", nplus %ld", (long)g->nplus);
+X	fprintf(d, "\n");
+X	s_print(g, d);
+X	for (i = 0; i < g->ncategories; i++) {
+X		nincat[i] = 0;
+X		for (c = CHAR_MIN; c <= CHAR_MAX; c++)
+X			if (g->categories[c] == i)
+X				nincat[i]++;
+X	}
+X	fprintf(d, "cc0#%d", nincat[0]);
+X	for (i = 1; i < g->ncategories; i++)
+X		if (nincat[i] == 1) {
+X			for (c = CHAR_MIN; c <= CHAR_MAX; c++)
+X				if (g->categories[c] == i)
+X					break;
+X			fprintf(d, ", %d=%s", i, regchar(c));
+X		}
+X	fprintf(d, "\n");
+X	for (i = 1; i < g->ncategories; i++)
+X		if (nincat[i] != 1) {
+X			fprintf(d, "cc%d\t", i);
+X			last = -1;
+X			for (c = CHAR_MIN; c <= CHAR_MAX+1; c++)	/* +1 does flush */
+X				if (c <= CHAR_MAX && g->categories[c] == i) {
+X					if (last < 0) {
+X						fprintf(d, "%s", regchar(c));
+X						last = c;
+X					}
+X				} else {
+X					if (last >= 0) {
+X						if (last != c-1)
+X							fprintf(d, "-%s",
+X								regchar(c-1));
+X						last = -1;
+X					}
+X				}
+X			fprintf(d, "\n");
+X		}
+X}
+X
+X/*
+X - s_print - print the strip for debugging
+X == static void s_print(register struct re_guts *g, FILE *d);
+X */
+Xstatic void
+Xs_print(g, d)
+Xregister struct re_guts *g;
+XFILE *d;
+X{
+X	register sop *s;
+X	register cset *cs;
+X	register int i;
+X	register int done = 0;
+X	register sop opnd;
+X	register int col = 0;
+X	register int last;
+X	register sopno offset = 2;
+X#	define	GAP()	{	if (offset % 5 == 0) { \
+X					if (col > 40) { \
+X						fprintf(d, "\n\t"); \
+X						col = 0; \
+X					} else { \
+X						fprintf(d, " "); \
+X						col++; \
+X					} \
+X				} else \
+X					col++; \
+X				offset++; \
+X			}
+X
+X	if (OP(g->strip[0]) != OEND)
+X		fprintf(d, "missing initial OEND!\n");
+X	for (s = &g->strip[1]; !done; s++) {
+X		opnd = OPND(*s);
+X		switch (OP(*s)) {
+X		case OEND:
+X			fprintf(d, "\n");
+X			done = 1;
+X			break;
+X		case OCHAR:
+X			if (strchr("\\|()^$.[+*?{}!<> ", (char)opnd) != NULL)
+X				fprintf(d, "\\%c", (char)opnd);
+X			else
+X				fprintf(d, "%s", regchar((char)opnd));
+X			break;
+X		case OBOL:
+X			fprintf(d, "^");
+X			break;
+X		case OEOL:
+X			fprintf(d, "$");
+X			break;
+X		case OBOW:
+X			fprintf(d, "\\{");
+X			break;
+X		case OEOW:
+X			fprintf(d, "\\}");
+X			break;
+X		case OANY:
+X			fprintf(d, ".");
+X			break;
+X		case OANYOF:
+X			fprintf(d, "[(%ld)", (long)opnd);
+X			cs = &g->sets[opnd];
+X			last = -1;
+X			for (i = 0; i < g->csetsize+1; i++)	/* +1 flushes */
+X				if (CHIN(cs, i) && i < g->csetsize) {
+X					if (last < 0) {
+X						fprintf(d, "%s", regchar(i));
+X						last = i;
+X					}
+X				} else {
+X					if (last >= 0) {
+X						if (last != i-1)
+X							fprintf(d, "-%s",
+X								regchar(i-1));
+X						last = -1;
+X					}
+X				}
+X			fprintf(d, "]");
+X			break;
+X		case OBACK_:
+X			fprintf(d, "(\\<%ld>", (long)opnd);
+X			break;
+X		case O_BACK:
+X			fprintf(d, "<%ld>\\)", (long)opnd);
+X			break;
+X		case OPLUS_:
+X			fprintf(d, "(+");
+X			if (OP(*(s+opnd)) != O_PLUS)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			break;
+X		case O_PLUS:
+X			if (OP(*(s-opnd)) != OPLUS_)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			fprintf(d, "+)");
+X			break;
+X		case OQUEST_:
+X			fprintf(d, "(?");
+X			if (OP(*(s+opnd)) != O_QUEST)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			break;
+X		case O_QUEST:
+X			if (OP(*(s-opnd)) != OQUEST_)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			fprintf(d, "?)");
+X			break;
+X		case OLPAREN:
+X			fprintf(d, "((<%ld>", (long)opnd);
+X			break;
+X		case ORPAREN:
+X			fprintf(d, "<%ld>))", (long)opnd);
+X			break;
+X		case OCH_:
+X			fprintf(d, "<");
+X			if (OP(*(s+opnd)) != OOR2)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			break;
+X		case OOR1:
+X			if (OP(*(s-opnd)) != OOR1 && OP(*(s-opnd)) != OCH_)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			fprintf(d, "|");
+X			break;
+X		case OOR2:
+X			fprintf(d, "|");
+X			if (OP(*(s+opnd)) != OOR2 && OP(*(s+opnd)) != O_CH)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			break;
+X		case O_CH:
+X			if (OP(*(s-opnd)) != OOR1)
+X				fprintf(d, "<%ld>", (long)opnd);
+X			fprintf(d, ">");
+X			break;
+X		default:
+X			fprintf(d, "!%d(%d)!", OP(*s), opnd);
+X			break;
+X		}
+X		if (!done)
+X			GAP();
+X	}
+X}
+X
+X/*
+X - regchar - make a character printable
+X == static char *regchar(int ch);
+X */
+Xstatic char *			/* -> representation */
+Xregchar(ch)
+Xint ch;
+X{
+X	static char buf[10];
+X
+X	if (isprint(ch) || ch == ' ')
+X		sprintf(buf, "%c", ch);
+X	else
+X		sprintf(buf, "\\%o", ch);
+X	return(buf);
+X}
+!
+echo 'main.c':
+sed 's/^X//' >'main.c' <<'!'
+X#include <stdio.h>
+X#include <string.h>
+X#include <sys/types.h>
+X#include <regex.h>
+X#include <assert.h>
+X
+X#include "main.ih"
+X
+Xchar *progname;
+Xint debug = 0;
+Xint line = 0;
+Xint status = 0;
+X
+Xint copts = REG_EXTENDED;
+Xint eopts = 0;
+Xregoff_t startoff = 0;
+Xregoff_t endoff = 0;
+X
+X
+Xextern int split();
+Xextern void regprint();
+X
+X/*
+X - main - do the simple case, hand off to regress() for regression
+X */
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	regex_t re;
+X#	define	NS	10
+X	regmatch_t subs[NS];
+X	char erbuf[100];
+X	int err;
+X	size_t len;
+X	int c;
+X	int errflg = 0;
+X	register int i;
+X	extern int optind;
+X	extern char *optarg;
+X
+X	progname = argv[0];
+X
+X	while ((c = getopt(argc, argv, "c:e:S:E:x")) != EOF)
+X		switch (c) {
+X		case 'c':	/* compile options */
+X			copts = options('c', optarg);
+X			break;
+X		case 'e':	/* execute options */
+X			eopts = options('e', optarg);
+X			break;
+X		case 'S':	/* start offset */
+X			startoff = (regoff_t)atoi(optarg);
+X			break;
+X		case 'E':	/* end offset */
+X			endoff = (regoff_t)atoi(optarg);
+X			break;
+X		case 'x':	/* Debugging. */
+X			debug++;
+X			break;
+X		case '?':
+X		default:
+X			errflg++;
+X			break;
+X		}
+X	if (errflg) {
+X		fprintf(stderr, "usage: %s ", progname);
+X		fprintf(stderr, "[-c copt][-C][-d] [re]\n");
+X		exit(2);
+X	}
+X
+X	if (optind >= argc) {
+X		regress(stdin);
+X		exit(status);
+X	}
+X
+X	err = regcomp(&re, argv[optind++], copts);
+X	if (err) {
+X		len = regerror(err, &re, erbuf, sizeof(erbuf));
+X		fprintf(stderr, "error %s, %d/%d `%s'\n",
+X			eprint(err), len, sizeof(erbuf), erbuf);
+X		exit(status);
+X	}
+X	regprint(&re, stdout);	
+X
+X	if (optind >= argc) {
+X		regfree(&re);
+X		exit(status);
+X	}
+X
+X	if (eopts&REG_STARTEND) {
+X		subs[0].rm_so = startoff;
+X		subs[0].rm_eo = strlen(argv[optind]) - endoff;
+X	}
+X	err = regexec(&re, argv[optind], (size_t)NS, subs, eopts);
+X	if (err) {
+X		len = regerror(err, &re, erbuf, sizeof(erbuf));
+X		fprintf(stderr, "error %s, %d/%d `%s'\n",
+X			eprint(err), len, sizeof(erbuf), erbuf);
+X		exit(status);
+X	}
+X	if (!(copts&REG_NOSUB)) {
+X		len = (int)(subs[0].rm_eo - subs[0].rm_so);
+X		if (subs[0].rm_so != -1) {
+X			if (len != 0)
+X				printf("match `%.*s'\n", len,
+X					argv[optind] + subs[0].rm_so);
+X			else
+X				printf("match `'@%.1s\n",
+X					argv[optind] + subs[0].rm_so);
+X		}
+X		for (i = 1; i < NS; i++)
+X			if (subs[i].rm_so != -1)
+X				printf("(%d) `%.*s'\n", i,
+X					(int)(subs[i].rm_eo - subs[i].rm_so),
+X					argv[optind] + subs[i].rm_so);
+X	}
+X	exit(status);
+X}
+X
+X/*
+X - regress - main loop of regression test
+X == void regress(FILE *in);
+X */
+Xvoid
+Xregress(in)
+XFILE *in;
+X{
+X	char inbuf[1000];
+X#	define	MAXF	10
+X	char *f[MAXF];
+X	int nf;
+X	int i;
+X	char erbuf[100];
+X	size_t ne;
+X	char *badpat = "invalid regular expression";
+X#	define	SHORT	10
+X	char *bpname = "REG_BADPAT";
+X	regex_t re;
+X
+X	while (fgets(inbuf, sizeof(inbuf), in) != NULL) {
+X		line++;
+X		if (inbuf[0] == '#' || inbuf[0] == '\n')
+X			continue;			/* NOTE CONTINUE */
+X		inbuf[strlen(inbuf)-1] = '\0';	/* get rid of stupid \n */
+X		if (debug)
+X			fprintf(stdout, "%d:\n", line);
+X		nf = split(inbuf, f, MAXF, "\t\t");
+X		if (nf < 3) {
+X			fprintf(stderr, "bad input, line %d\n", line);
+X			exit(1);
+X		}
+X		for (i = 0; i < nf; i++)
+X			if (strcmp(f[i], "\"\"") == 0)
+X				f[i] = "";
+X		if (nf <= 3)
+X			f[3] = NULL;
+X		if (nf <= 4)
+X			f[4] = NULL;
+X		try(f[0], f[1], f[2], f[3], f[4], options('c', f[1]));
+X		if (opt('&', f[1]))	/* try with either type of RE */
+X			try(f[0], f[1], f[2], f[3], f[4],
+X					options('c', f[1]) &~ REG_EXTENDED);
+X	}
+X
+X	ne = regerror(REG_BADPAT, (regex_t *)NULL, erbuf, sizeof(erbuf));
+X	if (strcmp(erbuf, badpat) != 0 || ne != strlen(badpat)+1) {
+X		fprintf(stderr, "end: regerror() test gave `%s' not `%s'\n",
+X							erbuf, badpat);
+X		status = 1;
+X	}
+X	ne = regerror(REG_BADPAT, (regex_t *)NULL, erbuf, (size_t)SHORT);
+X	if (strncmp(erbuf, badpat, SHORT-1) != 0 || erbuf[SHORT-1] != '\0' ||
+X						ne != strlen(badpat)+1) {
+X		fprintf(stderr, "end: regerror() short test gave `%s' not `%.*s'\n",
+X						erbuf, SHORT-1, badpat);
+X		status = 1;
+X	}
+X	ne = regerror(REG_ITOA|REG_BADPAT, (regex_t *)NULL, erbuf, sizeof(erbuf));
+X	if (strcmp(erbuf, bpname) != 0 || ne != strlen(bpname)+1) {
+X		fprintf(stderr, "end: regerror() ITOA test gave `%s' not `%s'\n",
+X						erbuf, bpname);
+X		status = 1;
+X	}
+X	re.re_endp = bpname;
+X	ne = regerror(REG_ATOI, &re, erbuf, sizeof(erbuf));
+X	if (atoi(erbuf) != (int)REG_BADPAT) {
+X		fprintf(stderr, "end: regerror() ATOI test gave `%s' not `%ld'\n",
+X						erbuf, (long)REG_BADPAT);
+X		status = 1;
+X	} else if (ne != strlen(erbuf)+1) {
+X		fprintf(stderr, "end: regerror() ATOI test len(`%s') = %ld\n",
+X						erbuf, (long)REG_BADPAT);
+X		status = 1;
+X	}
+X}
+X
+X/*
+X - try - try it, and report on problems
+X == void try(char *f0, char *f1, char *f2, char *f3, char *f4, int opts);
+X */
+Xvoid
+Xtry(f0, f1, f2, f3, f4, opts)
+Xchar *f0;
+Xchar *f1;
+Xchar *f2;
+Xchar *f3;
+Xchar *f4;
+Xint opts;			/* may not match f1 */
+X{
+X	regex_t re;
+X#	define	NSUBS	10
+X	regmatch_t subs[NSUBS];
+X#	define	NSHOULD	15
+X	char *should[NSHOULD];
+X	int nshould;
+X	char erbuf[100];
+X	int err;
+X	int len;
+X	char *type = (opts & REG_EXTENDED) ? "ERE" : "BRE";
+X	register int i;
+X	char *grump;
+X	char f0copy[1000];
+X	char f2copy[1000];
+X
+X	strcpy(f0copy, f0);
+X	re.re_endp = (opts&REG_PEND) ? f0copy + strlen(f0copy) : NULL;
+X	fixstr(f0copy);
+X	err = regcomp(&re, f0copy, opts);
+X	if (err != 0 && (!opt('C', f1) || err != efind(f2))) {
+X		/* unexpected error or wrong error */
+X		len = regerror(err, &re, erbuf, sizeof(erbuf));
+X		fprintf(stderr, "%d: %s error %s, %d/%d `%s'\n",
+X					line, type, eprint(err), len,
+X					sizeof(erbuf), erbuf);
+X		status = 1;
+X	} else if (err == 0 && opt('C', f1)) {
+X		/* unexpected success */
+X		fprintf(stderr, "%d: %s should have given REG_%s\n",
+X						line, type, f2);
+X		status = 1;
+X		err = 1;	/* so we won't try regexec */
+X	}
+X
+X	if (err != 0) {
+X		regfree(&re);
+X		return;
+X	}
+X
+X	strcpy(f2copy, f2);
+X	fixstr(f2copy);
+X
+X	if (options('e', f1)&REG_STARTEND) {
+X		if (strchr(f2, '(') == NULL || strchr(f2, ')') == NULL)
+X			fprintf(stderr, "%d: bad STARTEND syntax\n", line);
+X		subs[0].rm_so = strchr(f2, '(') - f2 + 1;
+X		subs[0].rm_eo = strchr(f2, ')') - f2;
+X	}
+X	err = regexec(&re, f2copy, NSUBS, subs, options('e', f1));
+X
+X	if (err != 0 && (f3 != NULL || err != REG_NOMATCH)) {
+X		/* unexpected error or wrong error */
+X		len = regerror(err, &re, erbuf, sizeof(erbuf));
+X		fprintf(stderr, "%d: %s exec error %s, %d/%d `%s'\n",
+X					line, type, eprint(err), len,
+X					sizeof(erbuf), erbuf);
+X		status = 1;
+X	} else if (err != 0) {
+X		/* nothing more to check */
+X	} else if (f3 == NULL) {
+X		/* unexpected success */
+X		fprintf(stderr, "%d: %s exec should have failed\n",
+X						line, type);
+X		status = 1;
+X		err = 1;		/* just on principle */
+X	} else if (opts&REG_NOSUB) {
+X		/* nothing more to check */
+X	} else if ((grump = check(f2, subs[0], f3)) != NULL) {
+X		fprintf(stderr, "%d: %s %s\n", line, type, grump);
+X		status = 1;
+X		err = 1;
+X	}
+X
+X	if (err != 0 || f4 == NULL) {
+X		regfree(&re);
+X		return;
+X	}
+X
+X	for (i = 1; i < NSHOULD; i++)
+X		should[i] = NULL;
+X	nshould = split(f4, should+1, NSHOULD-1, ",");
+X	if (nshould == 0) {
+X		nshould = 1;
+X		should[1] = "";
+X	}
+X	for (i = 1; i < NSUBS; i++) {
+X		grump = check(f2, subs[i], should[i]);
+X		if (grump != NULL) {
+X			fprintf(stderr, "%d: %s $%d %s\n", line,
+X							type, i, grump);
+X			status = 1;
+X			err = 1;
+X		}
+X	}
+X
+X	regfree(&re);
+X}
+X
+X/*
+X - options - pick options out of a regression-test string
+X == int options(int type, char *s);
+X */
+Xint
+Xoptions(type, s)
+Xint type;			/* 'c' compile, 'e' exec */
+Xchar *s;
+X{
+X	register char *p;
+X	register int o = (type == 'c') ? copts : eopts;
+X	register char *legal = (type == 'c') ? "bisnmp" : "^$#tl";
+X
+X	for (p = s; *p != '\0'; p++)
+X		if (strchr(legal, *p) != NULL)
+X			switch (*p) {
+X			case 'b':
+X				o &= ~REG_EXTENDED;
+X				break;
+X			case 'i':
+X				o |= REG_ICASE;
+X				break;
+X			case 's':
+X				o |= REG_NOSUB;
+X				break;
+X			case 'n':
+X				o |= REG_NEWLINE;
+X				break;
+X			case 'm':
+X				o &= ~REG_EXTENDED;
+X				o |= REG_NOSPEC;
+X				break;
+X			case 'p':
+X				o |= REG_PEND;
+X				break;
+X			case '^':
+X				o |= REG_NOTBOL;
+X				break;
+X			case '$':
+X				o |= REG_NOTEOL;
+X				break;
+X			case '#':
+X				o |= REG_STARTEND;
+X				break;
+X			case 't':	/* trace */
+X				o |= REG_TRACE;
+X				break;
+X			case 'l':	/* force long representation */
+X				o |= REG_LARGE;
+X				break;
+X			case 'r':	/* force backref use */
+X				o |= REG_BACKR;
+X				break;
+X			}
+X	return(o);
+X}
+X
+X/*
+X - opt - is a particular option in a regression string?
+X == int opt(int c, char *s);
+X */
+Xint				/* predicate */
+Xopt(c, s)
+Xint c;
+Xchar *s;
+X{
+X	return(strchr(s, c) != NULL);
+X}
+X
+X/*
+X - fixstr - transform magic characters in strings
+X == void fixstr(register char *p);
+X */
+Xvoid
+Xfixstr(p)
+Xregister char *p;
+X{
+X	if (p == NULL)
+X		return;
+X
+X	for (; *p != '\0'; p++)
+X		if (*p == 'N')
+X			*p = '\n';
+X		else if (*p == 'T')
+X			*p = '\t';
+X		else if (*p == 'S')
+X			*p = ' ';
+X		else if (*p == 'Z')
+X			*p = '\0';
+X}
+X
+X/*
+X - check - check a substring match
+X == char *check(char *str, regmatch_t sub, char *should);
+X */
+Xchar *				/* NULL or complaint */
+Xcheck(str, sub, should)
+Xchar *str;
+Xregmatch_t sub;
+Xchar *should;
+X{
+X	register int len;
+X	register int shlen;
+X	register char *p;
+X	static char grump[500];
+X	register char *at = NULL;
+X
+X	if (should != NULL && strcmp(should, "-") == 0)
+X		should = NULL;
+X	if (should != NULL && should[0] == '@') {
+X		at = should + 1;
+X		should = "";
+X	}
+X
+X	/* check rm_so and rm_eo for consistency */
+X	if (sub.rm_so > sub.rm_eo || (sub.rm_so == -1 && sub.rm_eo != -1) ||
+X				(sub.rm_so != -1 && sub.rm_eo == -1) ||
+X				(sub.rm_so != -1 && sub.rm_so < 0) ||
+X				(sub.rm_eo != -1 && sub.rm_eo < 0) ) {
+X		sprintf(grump, "start %ld end %ld", (long)sub.rm_so,
+X							(long)sub.rm_eo);
+X		return(grump);
+X	}
+X
+X	/* check for no match */
+X	if (sub.rm_so == -1 && should == NULL)
+X		return(NULL);
+X	if (sub.rm_so == -1)
+X		return("did not match");
+X
+X	/* check for in range */
+X	if (sub.rm_eo > strlen(str)) {
+X		sprintf(grump, "start %ld end %ld, past end of string",
+X					(long)sub.rm_so, (long)sub.rm_eo);
+X		return(grump);
+X	}
+X
+X	len = (int)(sub.rm_eo - sub.rm_so);
+X	shlen = (int)strlen(should);
+X	p = str + sub.rm_so;
+X
+X	/* check for not supposed to match */
+X	if (should == NULL) {
+X		sprintf(grump, "matched `%.*s'", len, p);
+X		return(grump);
+X	}
+X
+X	/* check for wrong match */
+X	if (len != shlen || strncmp(p, should, (size_t)shlen) != 0) {
+X		sprintf(grump, "matched `%.*s' instead", len, p);
+X		return(grump);
+X	}
+X	if (shlen > 0)
+X		return(NULL);
+X
+X	/* check null match in right place */
+X	if (at == NULL)
+X		return(NULL);
+X	shlen = strlen(at);
+X	if (shlen == 0)
+X		shlen = 1;	/* force check for end-of-string */
+X	if (strncmp(p, at, shlen) != 0) {
+X		sprintf(grump, "matched null at `%.20s'", p);
+X		return(grump);
+X	}
+X	return(NULL);
+X}
+X
+X/*
+X - eprint - convert error number to name
+X == static char *eprint(int err);
+X */
+Xstatic char *
+Xeprint(err)
+Xint err;
+X{
+X	static char epbuf[100];
+X	size_t len;
+X
+X	len = regerror(REG_ITOA|err, (regex_t *)NULL, epbuf, sizeof(epbuf));
+X	assert(len <= sizeof(epbuf));
+X	return(epbuf);
+X}
+X
+X/*
+X - efind - convert error name to number
+X == static int efind(char *name);
+X */
+Xstatic int
+Xefind(name)
+Xchar *name;
+X{
+X	static char efbuf[100];
+X	size_t n;
+X	regex_t re;
+X
+X	sprintf(efbuf, "REG_%s", name);
+X	assert(strlen(efbuf) < sizeof(efbuf));
+X	re.re_endp = efbuf;
+X	(void) regerror(REG_ATOI, &re, efbuf, sizeof(efbuf));
+X	return(atoi(efbuf));
+X}
+!
+echo 'split.c':
+sed 's/^X//' >'split.c' <<'!'
+X#include <stdio.h>
+X#include <string.h>
+X
+X/*
+X - split - divide a string into fields, like awk split()
+X = int split(char *string, char *fields[], int nfields, char *sep);
+X */
+Xint				/* number of fields, including overflow */
+Xsplit(string, fields, nfields, sep)
+Xchar *string;
+Xchar *fields[];			/* list is not NULL-terminated */
+Xint nfields;			/* number of entries available in fields[] */
+Xchar *sep;			/* "" white, "c" single char, "ab" [ab]+ */
+X{
+X	register char *p = string;
+X	register char c;			/* latest character */
+X	register char sepc = sep[0];
+X	register char sepc2;
+X	register int fn;
+X	register char **fp = fields;
+X	register char *sepp;
+X	register int trimtrail;
+X
+X	/* white space */
+X	if (sepc == '\0') {
+X		while ((c = *p++) == ' ' || c == '\t')
+X			continue;
+X		p--;
+X		trimtrail = 1;
+X		sep = " \t";	/* note, code below knows this is 2 long */
+X		sepc = ' ';
+X	} else
+X		trimtrail = 0;
+X	sepc2 = sep[1];		/* now we can safely pick this up */
+X
+X	/* catch empties */
+X	if (*p == '\0')
+X		return(0);
+X
+X	/* single separator */
+X	if (sepc2 == '\0') {
+X		fn = nfields;
+X		for (;;) {
+X			*fp++ = p;
+X			fn--;
+X			if (fn == 0)
+X				break;
+X			while ((c = *p++) != sepc)
+X				if (c == '\0')
+X					return(nfields - fn);
+X			*(p-1) = '\0';
+X		}
+X		/* we have overflowed the fields vector -- just count them */
+X		fn = nfields;
+X		for (;;) {
+X			while ((c = *p++) != sepc)
+X				if (c == '\0')
+X					return(fn);
+X			fn++;
+X		}
+X		/* not reached */
+X	}
+X
+X	/* two separators */
+X	if (sep[2] == '\0') {
+X		fn = nfields;
+X		for (;;) {
+X			*fp++ = p;
+X			fn--;
+X			while ((c = *p++) != sepc && c != sepc2)
+X				if (c == '\0') {
+X					if (trimtrail && **(fp-1) == '\0')
+X						fn++;
+X					return(nfields - fn);
+X				}
+X			if (fn == 0)
+X				break;
+X			*(p-1) = '\0';
+X			while ((c = *p++) == sepc || c == sepc2)
+X				continue;
+X			p--;
+X		}
+X		/* we have overflowed the fields vector -- just count them */
+X		fn = nfields;
+X		while (c != '\0') {
+X			while ((c = *p++) == sepc || c == sepc2)
+X				continue;
+X			p--;
+X			fn++;
+X			while ((c = *p++) != '\0' && c != sepc && c != sepc2)
+X				continue;
+X		}
+X		/* might have to trim trailing white space */
+X		if (trimtrail) {
+X			p--;
+X			while ((c = *--p) == sepc || c == sepc2)
+X				continue;
+X			p++;
+X			if (*p != '\0') {
+X				if (fn == nfields+1)
+X					*p = '\0';
+X				fn--;
+X			}
+X		}
+X		return(fn);
+X	}
+X
+X	/* n separators */
+X	fn = 0;
+X	for (;;) {
+X		if (fn < nfields)
+X			*fp++ = p;
+X		fn++;
+X		for (;;) {
+X			c = *p++;
+X			if (c == '\0')
+X				return(fn);
+X			sepp = sep;
+X			while ((sepc = *sepp++) != '\0' && sepc != c)
+X				continue;
+X			if (sepc != '\0')	/* it was a separator */
+X				break;
+X		}
+X		if (fn < nfields)
+X			*(p-1) = '\0';
+X		for (;;) {
+X			c = *p++;
+X			sepp = sep;
+X			while ((sepc = *sepp++) != '\0' && sepc != c)
+X				continue;
+X			if (sepc == '\0')	/* it wasn't a separator */
+X				break;
+X		}
+X		p--;
+X	}
+X
+X	/* not reached */
+X}
+X
+X#ifdef TEST_SPLIT
+X
+X
+X/*
+X * test program
+X * pgm		runs regression
+X * pgm sep	splits stdin lines by sep
+X * pgm str sep	splits str by sep
+X * pgm str sep n	splits str by sep n times
+X */
+Xint
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	char buf[512];
+X	register int n;
+X#	define	MNF	10
+X	char *fields[MNF];
+X
+X	if (argc > 4)
+X		for (n = atoi(argv[3]); n > 0; n--) {
+X			(void) strcpy(buf, argv[1]);
+X		}
+X	else if (argc > 3)
+X		for (n = atoi(argv[3]); n > 0; n--) {
+X			(void) strcpy(buf, argv[1]);
+X			(void) split(buf, fields, MNF, argv[2]);
+X		}
+X	else if (argc > 2)
+X		dosplit(argv[1], argv[2]);
+X	else if (argc > 1)
+X		while (fgets(buf, sizeof(buf), stdin) != NULL) {
+X			buf[strlen(buf)-1] = '\0';	/* stomp newline */
+X			dosplit(buf, argv[1]);
+X		}
+X	else
+X		regress();
+X
+X	exit(0);
+X}
+X
+Xdosplit(string, seps)
+Xchar *string;
+Xchar *seps;
+X{
+X#	define	NF	5
+X	char *fields[NF];
+X	register int nf;
+X
+X	nf = split(string, fields, NF, seps);
+X	print(nf, NF, fields);
+X}
+X
+Xprint(nf, nfp, fields)
+Xint nf;
+Xint nfp;
+Xchar *fields[];
+X{
+X	register int fn;
+X	register int bound;
+X
+X	bound = (nf > nfp) ? nfp : nf;
+X	printf("%d:\t", nf);
+X	for (fn = 0; fn < bound; fn++)
+X		printf("\"%s\"%s", fields[fn], (fn+1 < nf) ? ", " : "\n");
+X}
+X
+X#define	RNF	5		/* some table entries know this */
+Xstruct {
+X	char *str;
+X	char *seps;
+X	int nf;
+X	char *fi[RNF];
+X} tests[] = {
+X	"",		" ",	0,	{ "" },
+X	" ",		" ",	2,	{ "", "" },
+X	"x",		" ",	1,	{ "x" },
+X	"xy",		" ",	1,	{ "xy" },
+X	"x y",		" ",	2,	{ "x", "y" },
+X	"abc def  g ",	" ",	5,	{ "abc", "def", "", "g", "" },
+X	"  a bcd",	" ",	4,	{ "", "", "a", "bcd" },
+X	"a b c d e f",	" ",	6,	{ "a", "b", "c", "d", "e f" },
+X	" a b c d ",	" ",	6,	{ "", "a", "b", "c", "d " },
+X
+X	"",		" _",	0,	{ "" },
+X	" ",		" _",	2,	{ "", "" },
+X	"x",		" _",	1,	{ "x" },
+X	"x y",		" _",	2,	{ "x", "y" },
+X	"ab _ cd",	" _",	2,	{ "ab", "cd" },
+X	" a_b  c ",	" _",	5,	{ "", "a", "b", "c", "" },
+X	"a b c_d e f",	" _",	6,	{ "a", "b", "c", "d", "e f" },
+X	" a b c d ",	" _",	6,	{ "", "a", "b", "c", "d " },
+X
+X	"",		" _~",	0,	{ "" },
+X	" ",		" _~",	2,	{ "", "" },
+X	"x",		" _~",	1,	{ "x" },
+X	"x y",		" _~",	2,	{ "x", "y" },
+X	"ab _~ cd",	" _~",	2,	{ "ab", "cd" },
+X	" a_b  c~",	" _~",	5,	{ "", "a", "b", "c", "" },
+X	"a b_c d~e f",	" _~",	6,	{ "a", "b", "c", "d", "e f" },
+X	"~a b c d ",	" _~",	6,	{ "", "a", "b", "c", "d " },
+X
+X	"",		" _~-",	0,	{ "" },
+X	" ",		" _~-",	2,	{ "", "" },
+X	"x",		" _~-",	1,	{ "x" },
+X	"x y",		" _~-",	2,	{ "x", "y" },
+X	"ab _~- cd",	" _~-",	2,	{ "ab", "cd" },
+X	" a_b  c~",	" _~-",	5,	{ "", "a", "b", "c", "" },
+X	"a b_c-d~e f",	" _~-",	6,	{ "a", "b", "c", "d", "e f" },
+X	"~a-b c d ",	" _~-",	6,	{ "", "a", "b", "c", "d " },
+X
+X	"",		"  ",	0,	{ "" },
+X	" ",		"  ",	2,	{ "", "" },
+X	"x",		"  ",	1,	{ "x" },
+X	"xy",		"  ",	1,	{ "xy" },
+X	"x y",		"  ",	2,	{ "x", "y" },
+X	"abc def  g ",	"  ",	4,	{ "abc", "def", "g", "" },
+X	"  a bcd",	"  ",	3,	{ "", "a", "bcd" },
+X	"a b c d e f",	"  ",	6,	{ "a", "b", "c", "d", "e f" },
+X	" a b c d ",	"  ",	6,	{ "", "a", "b", "c", "d " },
+X
+X	"",		"",	0,	{ "" },
+X	" ",		"",	0,	{ "" },
+X	"x",		"",	1,	{ "x" },
+X	"xy",		"",	1,	{ "xy" },
+X	"x y",		"",	2,	{ "x", "y" },
+X	"abc def  g ",	"",	3,	{ "abc", "def", "g" },
+X	"\t a bcd",	"",	2,	{ "a", "bcd" },
+X	"  a \tb\t c ",	"",	3,	{ "a", "b", "c" },
+X	"a b c d e ",	"",	5,	{ "a", "b", "c", "d", "e" },
+X	"a b\tc d e f",	"",	6,	{ "a", "b", "c", "d", "e f" },
+X	" a b c d e f ",	"",	6,	{ "a", "b", "c", "d", "e f " },
+X
+X	NULL,		NULL,	0,	{ NULL },
+X};
+X
+Xregress()
+X{
+X	char buf[512];
+X	register int n;
+X	char *fields[RNF+1];
+X	register int nf;
+X	register int i;
+X	register int printit;
+X	register char *f;
+X
+X	for (n = 0; tests[n].str != NULL; n++) {
+X		(void) strcpy(buf, tests[n].str);
+X		fields[RNF] = NULL;
+X		nf = split(buf, fields, RNF, tests[n].seps);
+X		printit = 0;
+X		if (nf != tests[n].nf) {
+X			printf("split `%s' by `%s' gave %d fields, not %d\n",
+X				tests[n].str, tests[n].seps, nf, tests[n].nf);
+X			printit = 1;
+X		} else if (fields[RNF] != NULL) {
+X			printf("split() went beyond array end\n");
+X			printit = 1;
+X		} else {
+X			for (i = 0; i < nf && i < RNF; i++) {
+X				f = fields[i];
+X				if (f == NULL)
+X					f = "(NULL)";
+X				if (strcmp(f, tests[n].fi[i]) != 0) {
+X					printf("split `%s' by `%s', field %d is `%s', not `%s'\n",
+X						tests[n].str, tests[n].seps,
+X						i, fields[i], tests[n].fi[i]);
+X					printit = 1;
+X				}
+X			}
+X		}
+X		if (printit)
+X			print(nf, RNF, fields);
+X	}
+X}
+X#endif
+!
+echo 'fake/limits.h':
+sed 's/^X//' >'fake/limits.h' <<'!'
+X#define	_POSIX2_RE_DUP_MAX	255
+X#define	CHAR_MIN	(-128)
+X#define	CHAR_MAX	127
+X#define	CHAR_BIT	8
+!
+echo 'fake/memmove.c':
+sed 's/^X//' >'fake/memmove.c' <<'!'
+X#include <stdio.h>
+X#include <string.h>
+X#include <sys/types.h>
+X
+X/*
+X - memmove - fake ANSI C routine
+X */
+Xchar *
+Xmemmove(dst, src, count)
+Xchar *dst;
+Xchar *src;
+Xsize_t count;
+X{
+X	register char *s;
+X	register char *d;
+X	register size_t n;
+X
+X	if (dst > src)
+X		for (d = dst+count, s = src+count, n = count; n > 0; n--)
+X			*--d = *--s;
+X	else
+X		for (d = dst, s = src, n = count; n > 0; n--)
+X			*d++ = *s++;
+X
+X	return(dst);
+X}
+!
+echo 'fake/stdlib.h':
+sed 's/^X//' >'fake/stdlib.h' <<'!'
+Xextern char *malloc();
+Xextern char *realloc();
+!
+echo done

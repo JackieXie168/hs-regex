@@ -1,24 +1,194 @@
-樣式規則 Pattern Rules
+★ 樣式規則 Pattern Rules
 
 		^ 		：定位規則，文字開頭
 		$		：定位規則，文字尾端
 		. 		：單一規則，代表任意字元
 	[chars]	：單一規則，有 chars 裡其中一個字元
 	[^chars]：單一規則，沒有 chars 裡其中一個字元
-		?  	：倍數規則， 0 或 1 個的前導符號
-		*  	：倍數規則， 0 或多個的前導符號
-		+  	：倍數規則， 1 或多個的前導符號
-	 {n,m}  	：表示前一符號在字串中的重覆次數。
+		? 		：倍數規則， 0 或 1 個的前導符號
+		* 		：倍數規則， 0 或多個的前導符號
+		+ 		：倍數規則， 1 或多個的前導符號
+	 {n,m} 	：表示前一符號在字串中的重覆次數。
 					例如：
 						A{2} 表示 'A' 重覆兩次 (即 'AA') ；
 						A{2,} 表示字串含有 2 到無數多個 'A' ；
 						A{2,5} 表示含有 2 到 5 個 'A' 。
 	\char	：轉義，將 char 視為一般字元，而非樣式規則字元
 	(string)：子樣式規則，將 string 記憶起來，歸於一組。
-            		稍後可利用 \n 的方式，將第 n 組 string 提出。
+      		稍後可利用 \n 的方式，將第 n 組 string 提出。
 
 
-★Regular Expressions Library : Dates And Times
+◎ POSIX Regular Expressions - detailed manual
+
+NAME
+regex - POSIX 1003.2 regular expressions
+
+DESCRIPTION
+Regular expressions (``RE''s), as defined in POSIX 1003.2, come in two forms: modern REs (roughly those of egrep; 1003.2 calls these ``extended'' REs) and obsolete REs (roughly those of ed(1); 1003.2 ``basic'' REs). Obsolete REs mostly exist for backward compatibility in some old programs; they will be discussed at the end. 1003.2 leaves some aspects of RE syntax and semantics open; `'marks decisions on these aspects that may not be fully portable to other 1003.2 implementations.
+
+A (modern) RE is one or more non-empty branches, separated by `|'. It matches anything that matches one of the branches.
+
+A branch is one or more pieces, concatenated. It matches a match for the first, followed by a match for the second, etc.
+
+A piece is an atom possibly followed by a single `*', `+', `?', or bound. An atom followed by `*' matches a sequence of 0 or more matches of the atom. An atom followed by `+' matches a sequence of 1 or more matches of the atom.  An atom followed by `?' matches a sequence of 0 or 1 matches of the atom.
+
+A bound is `{' followed by an unsigned decimal integer, possibly followed by `,' possibly followed by another unsigned decimal integer, always followed by `}'.  The integers must lie between 0 and RE_DUP_MAX (255) inclusive, and if there are two of them, the first may not exceed the second. An atom followed by a bound containing one integer i and no comma matches a sequence of exactly i matches of the atom. An atom followed by a bound containing one integer i and a comma matches a sequence of i or more matches of the atom. An atom followed by a bound containing two integers i and j matches a sequence of i through j (inclusive) matches of the atom.
+
+An atom is a regular expression enclosed in `()' (matching a match for the regular expression), an empty set of `()' (matching the null string), a bracket expression (see below), `.' (matching any single character), `^' (matching the null string at the beginning of a line), `$' (matching the null string at the end of a line), a `\' followed by one of the characters `^.[$()|*+?{\' (matching that character taken as an ordinary character), a `\' followed by any other character (matching that character taken as an ordinary character, as if the `\' had not been present), or a single character with no other significance (matching that character). A `{' followed by a character other than a digit is an ordinary character, not the beginning of a bound. It is illegal to end an RE with `\'.
+
+A bracket expression is a list of characters enclosed in `[]'. It normally matches any single character from the list (but see below).  If the list begins with `^', it matches any single character (but see below) not from the rest of the list. If two characters in the list are separated by `-', this is shorthand for the full range of characters between those two (inclusive) in the collating sequence, e.g. `[0-9]' in ASCII matches any decimal digit. It is illegal for two ranges to share an endpoint, e.g. `a-c-e'. Ranges are very collating-sequence-dependent, and portable programs should avoid relying on them.
+
+To include a literal `]' in the list, make it the first character (following a possible `^'). To include a literal `-', make it the first or last character, or the second endpoint of a range. To use a literal `-' as the first endpoint of a range, enclose it in `[.' and `.]' to make it a collating element (see below). With the exception of these and some combinations using `[' (see next paragraphs), all other special characters, including `\', lose their special significance within a bracket expression.
+
+Within a bracket expression, a collating element (a character, a multi-character sequence that collates as if it were a single character, or a collating-sequence name for either) enclosed in `[.' and `.]' stands for the sequence of characters of that collating element. The sequence is a single element of the bracket expression's list. A bracket expression containing a multi-character collating element can thus match more than one character, e.g. if the collating sequence includes a `ch' collating element, then the RE `[[.ch.]]*c' matches the first five characters of `chchcc'.
+
+Within a bracket expression, a collating element enclosed in `[=' and `=]' is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were `[.' and `.]'.) For example, if o and ^ are the members of an equivalence class, then `[[=o=]]', `[[=^=]]', and `[o^]' are all synonymous. An equivalence class may not be an endpoint of a range.
+
+Within a bracket expression, the name of a character class enclosed in `[:' and `:]' stands for the list of all characters belonging to that class. Standard character class names are:
+
+	alnum  digit     punct
+	alpha   graph    space
+	blank   lower    upper
+	cntrl    print     xdigit
+
+These stand for the character classes defined in ctype(3). A locale may provide others. A character class may not be used as an endpoint of a range.
+
+There are two special cases of bracket expressions: the bracket expressions `[[:<:]]' and `[[:>:]]' match the null string at the beginning and end of a word respectively. A word is defined as a sequence of word characters which is neither preceded nor followed by word characters. A word character is an alnum character (as defined by ctype(3)) or an underscore. This is an extension, compatible with but not specified by POSIX 1003.2, and should be used with caution in software intended to be portable to other systems.
+
+In the event that an RE could match more than one substring of a given string, the RE matches the one starting earliest in the string. If the RE could match more than one substring starting at that point, it matches the longest.  Subexpressions also match the longest possible substrings, subject to the constraint that the whole match be as long as possible, with subexpressions starting earlier in the RE taking priority over ones starting later. Note that higher-level subexpressions thus take priority over their lower-level component subexpressions.
+
+Match lengths are measured in characters, not collating elements.  A null string is considered longer than no match at all. For example, `bb*' matches the three middle characters  of  `abbbc',  `(wee|week)(knights|nights)' matches all ten characters of `weeknights', when `(.*).*' is matched against `abc' the parenthesized subexpression matches all three characters, and when `(a*)*' is matched against `bc' both the whole RE and the parenthesized subexpression match the null string.
+
+If case-independent matching is specified, the effect is much as if all case distinctions had vanished from the alphabet. When an alphabetic that exists in multiple cases appears as an ordinary character outside a bracket expression, it is effectively transformed into a bracket expression containing both cases, e.g. `x' becomes `[xX]'. When it appears inside a bracket expression, all case counterparts of it are added to the bracket expression, so that (e.g.) `[x]' becomes `[xX]' and `[^x]' becomes `[^xX]'.
+
+No particular limit is imposed on the length of REs. Programs intended to be portable should not employ REs longer than 256 bytes, as an implementation can refuse to accept such REs and remain POSIX-compliant.
+
+Obsolete (``basic'') regular expressions differ in several respects.  `|', `+', and `?' are ordinary characters and there is no equivalent for their functionality.  The delimiters for bounds are `\{' and `\}', with `{' and `}' by themselves ordinary characters.  The parentheses for nested subexpressions are `\(' and `\)', with `(' and `)' by themselves ordinary characters.  `^' is an ordinary character except at the beginning of the RE or the beginning of a parenthesized subexpression, `$' is an ordinary character except at the end of the RE or the end of a parenthesized subexpression, and `*' is an ordinary character if it appears at the beginning of the RE or the beginning of a parenthesized subexpression (after a possible leading `^'). Finally, there is one new type of atom, a back reference: `\' followed by a non-zero decimal digit d matches the same sequence of characters matched by the dth parenthesized subexpression (numbering subexpressions by the positions of their opening parentheses, left to right), so that (e.g.) `\([bc]\)\1' matches `bb' or `cc' but not `bc'.
+
+☆ A capsule summary of the Posix rules:
+
+	·regular expressions (REs) take the leftmost starting match, and the longest match starting there
+	·earlier subpatterns have leftmost-longest priority over later subpatterns
+	·higher-level subpatterns have leftmost-longest priority over their component subpatterns
+	·REs have right associative concatenation which can be changed with parenthesis
+	·parenthesized subexpressions return the match from their last usage
+	·text of component subexpressions must be contained in the text of the higher-level subexpressions
+	·if "p" and "q" can never match the same text then "p|q" and "q|p" are equivalent, up to trivial renumbering of captured subexpressions
+	·if "p" in "p*" is used to capture non-empty text then additional repetitions of "p" will not capture an empty string
+
+
+★ RegExLib.com Regular Expression Cheat Sheet
+
+
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+Metacharacters Defined																										Metacharacter Examples
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+MChar					Definition																									
+──────────────────────────────────────	────────────────
+	^						Start of a string.																						^abc			abc, abcdefg, abc123, ...
+──────────────────────────────────────	────────────────
+	$						End of a string.																						abc$			abc, endsinabc, 123abc, ...
+──────────────────────────────────────	────────────────
+	.						Any character (except \n newline)															a.c				abc, aac, acc, adc, aec, ...
+──────────────────────────────────────	────────────────
+	|						Alternation.																								bill|ted		ted, bill
+──────────────────────────────────────	────────────────
+	{...}						Explicit quantifier notation.																		ab{2}c		abbc
+──────────────────────────────────────	────────────────
+	[...]					Explicit set of characters to match.															a[bB]c		abc, aBc
+──────────────────────────────────────	────────────────
+	(...)					Logical grouping of part of an expression.												(abc){2}	abcabc
+──────────────────────────────────────	────────────────
+	*						0 or more of previous expression.															ab*c			ac, abc, abbc, abbbc, ...
+──────────────────────────────────────	────────────────
+	+						1 or more of previous expression.															ab+c			abc, abbc, abbbc, ...
+──────────────────────────────────────	────────────────
+	?						0 or 1 of previous expression; also forces minimal matching when an 	ab?c			ac, abc
+							expression might match several strings within a search string.
+──────────────────────────────────────	────────────────
+	\						Preceding one of the above, it makes it a literal instead of a special 		a\sc			a c
+							character. Preceding a special matching character, see below.
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+Character Escapes
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+ordinary 			Characters other than . $ ^ { [ ( | ) ] } * + ? \ match themselves.
+characters
+───────────────────────────────────────────────────────
+	\a					Matches a bell (alarm) \u0007.
+───────────────────────────────────────────────────────
+	\b					Matches a backspace \u0008 if in a []; otherwise matches a word boundary (between \w and \W characters).
+───────────────────────────────────────────────────────
+	\t					Matches a tab \u0009.
+───────────────────────────────────────────────────────
+	\r					Matches a carriage return \u000D.
+───────────────────────────────────────────────────────
+	\v					Matches a vertical tab \u000B.
+───────────────────────────────────────────────────────
+	\f					Matches a form feed \u000C.
+───────────────────────────────────────────────────────
+	\n					Matches a new line \u000A.
+───────────────────────────────────────────────────────
+	\e					Matches an escape \u001B.
+───────────────────────────────────────────────────────
+	\040			Matches an ASCII character as octal (up to three digits); numbers with no leading zero are backreferences if 
+						they have only one digit or if they correspond to a capturing group number. (For more information, see Backreferences.) For example, the character \040 represents a space.
+───────────────────────────────────────────────────────
+	\x20			Matches an ASCII character using hexadecimal representation (exactly two digits).
+───────────────────────────────────────────────────────
+	\cC				Matches an ASCII control character; for example \cC is control-C.
+───────────────────────────────────────────────────────
+	\u0020		Matches a Unicode character using a hexadecimal representation (exactly four digits).
+───────────────────────────────────────────────────────
+	\*					When followed by a character that is not recognized as an escaped character, matches that character. For 
+						example, \* is the same as \x2A.
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+
+
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔Character Classes
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+	.					Matches any character except \n. If modified by the Singleline option, a period character matches any character. 
+						For more information, see Regular Expression Options.
+───────────────────────────────────────────────────────
+	[aeiou]			Matches any single character included in the specified set of characters.
+───────────────────────────────────────────────────────
+	[^aeiou]			Matches any single character not in the specified set of characters.
+───────────────────────────────────────────────────────
+	[0-9a-fA-F]	Use of a hyphen (–) allows specification of contiguous character ranges.
+───────────────────────────────────────────────────────
+	\p{name}		Matches any character in the named character class specified by {name}. Supported names are Unicode groups 
+						and block ranges. For example, Ll, Nd, Z, IsGreek, IsBoxDrawing.
+───────────────────────────────────────────────────────
+	\P{name}		Matches text not included in groups and block ranges specified in {name}.
+───────────────────────────────────────────────────────
+	\w				Matches any word character. Equivalent to the Unicode character categories 
+						[\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Nd}\p{Pc}]. If ECMAScript-compliant behavior is specified with the ECMAScript 
+						option, \w is equivalent to [a-zA-Z_0-9].
+───────────────────────────────────────────────────────
+	\W				Matches any nonword character. Equivalent to the Unicode categories [^\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Nd}\p{Pc}]. 
+						If ECMAScript-compliant behavior is specified with the ECMAScript option, \W is equivalent to [^a-zA-Z_0-9].
+───────────────────────────────────────────────────────
+	\s					Matches any white-space character. Equivalent to the Unicode character categories [\f\n\r\t\v\x85\p{Z}]. If 
+						ECMAScript-compliant behavior is specified with the ECMAScript option, \s is equivalent to [ \f\n\r\t\v].
+───────────────────────────────────────────────────────
+	\S					Matches any non-white-space character. Equivalent to the Unicode character categories [^\f\n\r\t\v\x85\p{Z}]. 
+						If ECMAScript-compliant behavior is specified with the ECMAScript option, \S is equivalent to [^ \f\n\r\t\v].
+───────────────────────────────────────────────────────
+	\d					Matches any decimal digit. Equivalent to \p{Nd} for Unicode and [0-9] for non-Unicode, ECMAScript behavior.
+───────────────────────────────────────────────────────
+	\D				Matches any nondigit. Equivalent to \P{Nd} for Unicode and [^0-9] for non-Unicode, ECMAScript behavior.
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+
+
+
+☆ Regular Expressions Library : Dates And Times
 This section of the library contains regular expressions for matching dates and times. It is possible to write very loose checks that simply look for the presence of numbers between colons or dashes. The examples here attempt to be more sophisticated. To match a string that matches one of these expressions as a whole rather than in part, put a ^ before the expression and a $ after it. For example, \d+ becomes ^\d+$.
 
 	24-Hour HH:MM:SS
@@ -68,31 +238,28 @@ This section of the library contains regular expressions for matching dates and 
 		(\d{4})-(0[469]|11])-(0[1-9]|[12]\d|30)|
 		(\d\d[0248][048]|\d\d[13579][26])-(02)-(0[1-9]|1\d|2\d)|
 		(\d\d[0248][1235679]|\d\d[13579][01345789])-(02)-(0[1-9]|1\d|2[0-8])
-		POSIX Form: ([0-9][0-9][0-9][0-9])-(0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|([0-9][0-9][0-9][0-9])-(0[469]|11])-(0[1-9]|[12][0-9]|30)|([0-9][0-9][0248][048]|[0-9][0-9][13579][26])-(02)-(0[1-9]|1[0-9]|2[0-9])|([0-9][0-9][0248][1235679]|[0-9][0-9][13579][01345789])-(02)-(0[1-9]|1[0-9]|2[0-8])
-	
-☆A regular expression for this datetime format
-	^(((0?[1-9]|[12]\d|3[01])[\.\-\/](0?[13578]|1[02])[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|((0?[1-9]|[12]\d|30)[\.\-\/](0?[13456789]|1[012])[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|((0?[1-9]|1\d|2[0-8])[\.\-\/]0?2[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|(29[\.\-\/]0?2[\.\-\/]((1[6-9]|[2-9]\d)?(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)|00)))$
+		POSIX Form: ([0-9][0-9][0-9][0-9])-(0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|([0-9][0-9][0-9][0-9])-(0[469]|11)-(0[1-9]|[12][0-9]|30)|([0-9][0-9][0248][048]|[0-9][0-9][13579][26])-(02)-(0[1-9]|1[0-9]|2[0-9])|([0-9][0-9][0248][1235679]|[0-9][0-9][13579][01345789])-(02)-(0[1-9]|1[0-9]|2[0-8])
 
-★Regular Expression for TIME for 24 hr clock time and AM/PM
+★ Regular Expression for TIME for 24 hr clock time and AM/PM
 	^((0?[1-9]|1[012])(:[0-5]\d){0,2}(\ [AP]M))$|^([01]\d|2[0-3])(:[0-5]\d){0,2}$
 	
 	^([0]\d|[1][0-2])\/([0-2]\d|[3][0-1])\/([2][01]|[1][6-9])\d{2}(\s([0]\d|[1][0-2])(\:[0-5]\d){1,2})*\s*([aApP][mM]{0,2})?$
 
-☆Regular Expression for TIME for 24 hr clock time
+☆ Regular Expression for TIME for 24 hr clock time
 	^(20|21|22|23|[01]\d|\d)(([:][0-5]\d){1,2})$
 
-★Regular Expression for 「mm/dd/yyyy hh:MM:ss」 Datetime for all AD years, including leap years. 
+★ Regular Expression for 「mm/dd/yyyy hh:MM:ss」 Datetime for all AD years, including leap years. 
 	(?=\d)^(?:(?!(?:10\D(?:0?[5-9]|1[0-4])\D(?:1582))|(?:0?9\D(?:0?[3-9]|1[0-3])\D(?:1752)))((?:0?[13578]|1[02])|(?:0?[469]|11)(?!\/31)(?!-31)(?!\.31)|(?:0?2(?=.?(?:(?:29.(?!000[04]|(?:(?:1[^0-6]|[2468][^048]|[3579][^26])00))(?:(?:(?:\d\d)(?:[02468][048]|[13579][26])(?!\x20BC))|(?:00(?:42|3[0369]|2[147]|1[258]|09)\x20BC))))))|(?:0?2(?=.(?:(?:\d\D)|(?:[01]\d)|(?:2[0-8])))))([-.\/])(0?[1-9]|[12]\d|3[01])\2(?!0000)((?=(?:00(?:4[0-5]|[0-3]?\d)\x20BC)|(?:\d{4}(?!\x20BC)))\d{4}(?:\x20BC)?)(?:$|(?=\x20\d)\x20))?((?:(?:0?[1-9]|1[012])(?::[0-5]\d){0,2}(?:\x20[aApP][mM]))|(?:[01]\d|2[0-3])(?::[0-5]\d){1,2})?$
 
-☆Regular Expression for dd/mm/yyyy hh:MM:ss Datetime
+☆ Regular Expression for dd/mm/yyyy hh:MM:ss Datetime
 	(?n:^(?=\d)((?<day>31(?!(.0?[2469]|11))|30(?!.0?2)|29(?(.0?2)(?=.{3,4}(1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|(16|[2468][048]|[3579][26])00))|0?[1-9]|1\d|2[0-8])(?<sep>[/.-])(?<month>0?[1-9]|1[012])\2(?<year>(1[6-9]|[2-9]\d)\d{2})(?:(?=\x20\d)\x20|$))?(?<time>((0?[1-9]|1[012])(:[0-5]\d){0,2}(?i:\ [AP]M))|([01]\d|2[0-3])(:[0-5]\d){1,2})?$)
 
 	DD/MM/YYYY format New DateTime Regex. Rebuilt better than before, better, stronger, faster. This regex will validate a date, time or a datetime. It will also capture the date fields and the time. Dates are in the DD/MM/YYYY format and validated for months, number of days in a month and leap years (29/2) Date field can be separated by matched periods(.), dashes(-) or forward slashes(/). Year range 1600-9999 Time is either 12 hour AM/PM format (HH:mm:ss AM), where minutes and seconds are optional. AM or PM required. or 24 hour military format (HH:mm:SS), from 00:00:00 to 23:59:59, where hours and minutes fields are required, including leading 0 for hours less than 10. Datetime is the above date and time formats separated by a space, with the date first (DD/MM/YYYY HH:mm:SS) !IMPORTANT NOTE: your regex engine must support lookaheads and named groups to use this expression
 
-★This RE validate the full name of the months.
+★ This RE validate the full name of the months.
 	^(?:J(anuary|u(ne|ly))|February|Ma(rch|y)|A(pril|ugust)|(((Sept|Nov|Dec)em)|Octo)ber)$
 
-☆Regular Expression Validator Expression For Date & Time
+☆ Regular Expression Validator Expression For Date & Time
 	^(?=\d)(?:(?:(?:(?:(?:0?[13578]|1[02])(\/|-|\.)31)\1|(?:(?:0?[1,3-9]|1[0-2])(\/|-|\.)(?:29|30)\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})|(?:0?2(\/|-|\.)29\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))|(?:(?:0?[1-9])|(?:1[0-2]))(\/|-|\.)(?:0?[1-9]|1\d|2[0-8])\4(?:(?:1[6-9]|[2-9]\d)?\d{2}))($|\ (?=\d)))?(((0?[1-9]|1[012])(:[0-5]\d){0,2}(\ [AP]M))|([01]\d|2[0-3])(:[0-5]\d){1,2})?$
 
 		Validation Expression For Date & Time 
@@ -113,4 +280,80 @@ This section of the library contains regular expressions for matching dates and 
 		(?:(?:1[6-9]|[2-9]\d)?\d{2})|(?:0?2(\/|-|\.)29\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|
 		[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))|(?:(?:0?[1-9])|(?:1[0-2]))(\/|-|\.)(?:0?[1-9]
 		|1\d|2[0-8])\4(?:(?:1[6-9]|[2-9]\d)?\d{2}))($|\ (?=\d)))?(((0?[1-9]|1[012])(:[0-5]\d){0,2}(\ [AP]M))|([01]\d|2[0-3])(:[0-5]\d){1,2})?$"
+
+★ A regular expression for this datetime format
+	Perl Compatible Form: ^(((0?[1-9]|[12]\d|3[01])[\.\-\/](0?[13578]|1[02])[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|((0?[1-9]|[12]\d|30)[\.\-\/](0?[13456789]|1[012])[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|((0?[1-9]|1\d|2[0-8])[\.\-\/]0?2[\.\-\/]((1[6-9]|[2-9]\d)?\d{2}))|(29[\.\-\/]0?2[\.\-\/]((1[6-9]|[2-9]\d)?(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)|00)))$
+
+	POSIX Form:	((([0-9][0-9][0-9][0-9])-(0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|([0-9][0-9][0-9][0-9])-(0[469]|11)-(0[1-9]|[12][0-9]|30)|([0-9][0-9][0248][048]|[0-9][0-9][13579][26])-(02)-(0[1-9]|1[0-9]|2[0-9])|([0-9][0-9][0248][1235679]|[0-9][0-9][13579][01345789])-(02)-(0[1-9]|1[0-9]|2[0-8]))(T(([0-1]?[0-9]|2[0-3]):([0-5]?[0-9]):([0-5]?[0-9]))Z))
+
+☆ IP Address regular expression：Bellow the rgex that don't allow addresses like "x.x.x.255" or "x.x.x.0" it is good for IP address as is.	
+	^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){2}(\.([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4]))$
+
+And this regex (was sended by steve(thanx you very useful)) good for check network address or multicast addressing like x.x.x.255" or "x.x.x.0.
+
+	^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$
+
+How to validate IP address with regular expression
+	
+	·IP Address Regular Expression Pattern
+		^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])$
+	
+	·Description
+		^		#start of the line
+		 (		#  start of group #1
+		   [01]?\\d\\d? #    Can be one or two digits. If three digits appear, it must start either 0 or 1
+				#    e.g ([0-9], [0-9][0-9],[0-1][0-9][0-9])
+			|		#    ...or
+		   2[0-4]\\d	#    start with 2, follow by 0-4 and end with any digit (2[0-4][0-9]) 
+			|           #    ...or
+		   25[0-5]      #    start with 2, follow by 5 and end with 0-5 (25[0-5]) 
+		 )		#  end of group #2
+		  \.            #  follow by a dot "."
+		....            # repeat with 3 time (3x)
+		$		#end of the line
+
+
+★ Email Regex Pattern
+	[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}
+
+
+☆ URL Regular Expression
+	((https?|ftp|gopher|telnet|file|notes|ms-help):((//)|(\\\\))+[\w\d:#@%/;$()~_?\+-=\\\.&]*)
+
+★ Validating Credit Card Numbers
+	Validating credit card numbers is the ideal job for regular expressions. They're just a sequence of 13 to 16 digits, with a few specific digits at the start that identify the card issuer. You can use the specific regular expressions below to alert customers when they try to use a kind of card you don't accept, or to route orders using different cards to different processors. All these regexes were taken from RegexBuddy's library.
+
+	·Visa: ^4[0-9]{12}(?:[0-9]{3})?$ All Visa card numbers start with a 4. New cards have 16 digits. Old cards have 13.
+	·MasterCard: ^5[1-5][0-9]{14}$ All MasterCard numbers start with the numbers 51 through 55. All have 16 digits.
+	·American Express: ^3[47][0-9]{13}$ American Express card numbers start with 34 or 37 and have 15 digits.
+	·Diners Club: ^3(?:0[0-5]|[68][0-9])[0-9]{11}$ Diners Club card numbers begin with 300 through 305, 36 or 38. All have 14 digits. There are Diners Club cards that begin with 5 and have 16 digits. These are a joint venture between Diners Club and MasterCard, and should be processed like a MasterCard.
+	·Discover: ^6(?:011|5[0-9]{2})[0-9]{12}$ Discover card numbers begin with 6011 or 65. All have 16 digits.
+	·JCB: ^(?:2131|1800|35\d{3})\d{11}$ JCB cards beginning with 2131 or 1800 have 15 digits. JCB cards beginning with 35 have 16 digits.
+	
+	If you just want to check whether the card number looks valid, without determining the brand, you can combine the above six regexes into "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})$". 
+	You'll see I've simply alternated all the regexes, and used a non-capturing group to put the anchors outside the alternation. You can easily delete the card types you don't accept from the list.
+
+☆ MAC Address Validation
+	^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$
+	^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$
+	/^(?:[[:xdigit:]]{2}([-:]))(?:[[:xdigit:]]{2}\1){4}[[:xdigit:]]{2}$/
+	
+	[0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f]
+	
+	[0-9a-f]{2}[:-][0-9a-f]{2}[:-][0-9a-f]{2}[:-][0-9a-f]{2}[:-][0-9a-f]{2}[:-][0-9a-f]{2}
+
+
+★ Validating Domain Name
+	^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$
+
+☆ Validating Float Number
+	[-+]?(?:\b[0-9]+(?:\.[0-9]*)?|\.[0-9]+\b)(?:[eE][-+]?[0-9]+\b)?
+
+★ Roman Number Regexp
+	^(?i:(?=[MDCLXVI])((M{0,3})((C[DM])|(D?C{0,3}))?((X[LC])|(L?XX{0,2})|L)?((I[VX])|(V?(II{0,2}))|V)?))$
+
+☆ Validating Windows File Name Regexp
+	(?i)^(?!^(PRN|AUX|CLOCK\$|NUL|CON|COM\d|LPT\d|\..*)(\..+)?$)[^\\\./:\*\?\"<>\|][^\\/:\*\?\"<>\|]{0,254}$
+
+
 

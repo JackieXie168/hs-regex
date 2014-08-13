@@ -1,30 +1,38 @@
-noinst_PROGRAMS = pmatch ci_strcmp re
+noinst_PROGRAMS = pmatch ci_strcmp re ex_regex regex_example testregex
 
 ci_strcmp_SOURCES = ci_strcmp.c
 pmatch_SOURCES = pmatch.c
 re_SOURCES = debug.c split.c main.c
+ex_regex_SOURCES = ex_regex.c
+regex_example_SOURCES = regex_example.c
+testregex_SOURCES = testregex.c
 
-libregex_SOURCES = \
+REGEX_SOURCES = \
 							$(top_srcdir)/src/regcomp.c \
 							$(top_srcdir)/src/regexec.c \
 							$(top_srcdir)/src/regerror.c \
 							$(top_srcdir)/src/regfree.c
 
-libregex_Headers = \
+REGEX_Headers = \
 							$(top_srcdir)/include/cclass.h \
 							$(top_srcdir)/include/cname.h \
 							$(top_srcdir)/include/regex2.h \
 							$(top_srcdir)/include/utils.h
 
-libregex_Docs = \
+REGEX_Docs = \
 							$(top_srcdir)/doc/regex.3 \
 							$(top_srcdir)/doc/regex.7
 
-ALLSRC = $(re_SOURCES) $(libregex_SOURCES)
+ALLSRC = $(re_SOURCES) $(REGEX_SOURCES)
+
+REGEXHSRC = $(top_srcdir)/include/regex2.h $(REGEX_SOURCES)
 
 ci_strcmp_LDADD = $(top_srcdir)/src/libregex.la
 pmatch_LDADD = $(top_srcdir)/src/libregex.la
 re_LDADD = $(top_srcdir)/src/libregex.la
+ex_regex_LDADD = $(top_srcdir)/src/libregex.la
+regex_example_LDADD = $(top_srcdir)/src/libregex.la
+testregex_LDADD = $(top_srcdir)/src/libregex.la
 
 ci_strcmp_CFLAGS = -DMAIN
 
@@ -40,12 +48,15 @@ default:	r
 
 # Stuff that matters only if you're trying to lint the package.
 LINTFLAGS=-I. -Dstatic= -Dconst= -DREDEBUG
-LINTC= $(libregex_SOURCES) debug.c main.c
+LINTC= $(REGEX_SOURCES) debug.c main.c
 JUNKLINT=possible pointer alignment|null effect
 
 # arrangements to build forward-reference header files
 .c.ih:
-	sh $(srcdir)/mkh $(MKHFLAGS) -p $< >$(srcdir)/$@
+	sh mkh $(MKHFLAGS) -p $< > $@
+
+regex.h: $(REGEXHSRC) mkh
+	sh mkh $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) > regex.h
 
 # regression test
 r:	re tests
@@ -88,9 +99,9 @@ print:
 mf.tmp:	Makefile
 	sed '/^REGEXH=/s/=.*/=regex.h/' Makefile | sed '/#DEL$$/d' >$@
 
-DTRH=$(libregex_Headers)
+DTRH=$(REGEX_Headers)
 PRE=COPYING README NEWS
-POST=mkh $(libregex_Docs) tests $(DTRH) $(ALLSRC) fake/*.[ch]
+POST=mkh $(REGEX_Docs) tests $(DTRH) $(ALLSRC) fake/*.[ch]
 FILES=$(PRE) Makefile $(POST)
 DTR=$(PRE) Makefile=mf.tmp $(POST)
 dtr:	$(FILES) mf.tmp
@@ -107,4 +118,7 @@ rdf:	$(FILES)
 tidy:
 	rm -f junk* core core.* *.core dtr *.tmp lint
 
-CLEANFILES = *~ *.s $(tidy)
+CLEANFILES = *~ *.s $(tidy) re regex.h
+
+TESTS = test1.sh test2.sh test3.sh
+test1.sh: re

@@ -105,7 +105,7 @@ char *argv[];
 		len = (int)(subs[0].rm_eo - subs[0].rm_so);
 		if (subs[0].rm_so != -1) {
 			if (len != 0)
-				printf("match `%.*s'\n", (int)len,
+				printf("match `%.*s'\n", len,
 					argv[optind] + subs[0].rm_so);
 			else
 				printf("match `'@%.1s\n",
@@ -501,6 +501,7 @@ efind(name)
 char *name;
 {
 	static char efbuf[100];
+	size_t n;
 	regex_t re;
 
 	sprintf(efbuf, "REG_%s", name);

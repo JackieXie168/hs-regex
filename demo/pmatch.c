@@ -1,5 +1,6 @@
-/* 定義一組容納子樣式字串指標偏移值的陣列 pmatch，其型態為 regmatch_t。並定義 nmatch 以指示陣列大小。
-   pmatch 之中儲存的並不是字串指標，而是子樣式字串在來源字串的偏移位址的起始與終止值。
+/* 
+	定義一組容納子樣式字串指標偏移值的陣列 pmatch，其型態為 regmatch_t。並定義 nmatch 以指示陣列大小。
+	pmatch 之中儲存的並不是字串指標，而是子樣式字串在來源字串的偏移位址的起始與終止值。
 */
 
 // gcc -o pmatch pmatch.c -lregex -L.
@@ -13,20 +14,20 @@
 int main()
 {
 	regex_t preg;
-	regmatch_t pmatch[10];
-	size_t nmatch = 10;
+	regmatch_t pmatch[50];
+	size_t nmatch = 50;
 	int cflags = REG_EXTENDED | REG_ICASE;
 	int i, len, rc;
-	char buf[1024], reg[4096], str[256];
+	char buf[16384], reg[4096], str[1024];
  
 	while(1) {
 		printf("Input exp: ");
-		fgets(reg, 256, stdin);
+		fgets(reg, 4096, stdin);
 		if(reg[0] == '\n') break;
 		strtok(reg,"\n");
  
 		printf("Input str: ");
-		fgets(str,256,stdin);
+		fgets(str,1024,stdin);
 		if(str[0] == '\n') break;
 		strtok(str,"\n");
  

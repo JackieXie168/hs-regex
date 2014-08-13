@@ -1,0 +1,496 @@
+An introruction to Henry Spencer's Regular Expression library
+
+The Regular Expressions was named  regex or regexp which is a convenient and facile tool to do text process ing. It could be exactly to find the matched word from content of text file by specified rules. In Unix, there're some tools such that grep、sed、awk which could support regular expression. These tools exist for us is the most convenient to do text processing. However, the regular expression is a necessary tool for us to process text as we programming. Now we should need a library which support regular expression function to do text processing.
+
+Up to now as I know, there're some regex-library implementation in C/C++，they're AT&T ast、Henry Spencer's Regex Library(or Berkeley Unix libregex)、Caldera、GNU Regex Library、Libregexp9、TRE、re1/re2、rx、sljit、Boost.Regex、PCRE and PCRE++. The last two are relative and the others which are different implementation and independent in this twelve libraries. Here, I'd be have an introduction to Henry Spencer's Regex Library.
+
+1. What's the Henry Spencer's Regex Library?
+Henry Spencer's Regular Expression library which is a POSIX standard and it supply some API interfaces for regular expression. It's part of Apache httpd-1.xx. Here the home page is http://www.arglist.com/regex.
+
+All of the Regex library inplementation in C should follow the POSIX.2(IEEE Std 1003.2) specification which is supply  APIs for regular expression. The Unix(-like) OSs have installed the RE's library. 
+
+「Henry Spencer's Regexp Engine」  is an opensource that is retrieved from Apache httpd-1.XX versions (Now it's replaced by pcre in apache httpd-2.XX versions) or you could download the GNU Regex library. Both of the two RE's libraries which are mention above is fully support the POSIX.2 specification.
+
+
+Download：
+
+	GNU Regex Library：http://www.wuzesheng.com/wp-content/uploads/2010/03/gnuregex0_13.tar.gz
+	Henry Spencer's Regex Library：http://webhd.xuite.net/_my2/@FILE?verify&4ebb3a8dc3d44afc1b9883677abf1a80
+
+
+2. Henry Spencer's Regex Library APIs／POSIX Regex Functions
+		If you're writing code that has to be POSIX compatible, you'll need to use these functions. Their interfaces are as specified by POSIX, draft 1003.2/D11.2.
+
+（1）regcomp：POSIX Regular Expression Compiling
+
+	int regcomp (regex_t *PREG, const char *REGEX, int CFLAGS)
+	
+	Function：
+		With POSIX, you can only search for a given regular expression; you can't match it.  To do this, you must first compile it in a pattern buffer, using 'regcomp'.
+	
+	Parameters： 
+		PREG is the initialized pattern buffer's address, REGEX is the regular expression's address, and CFLAGS is the compilation flags, which Regex considers as a collection of bits.  Here are the valid bits, as defined in 'regex.h':
+
+		'REG_EXTENDED'
+			 says to use POSIX Extended Regular Expression syntax; if this isn't
+			 set, then says to use POSIX Basic Regular Expression syntax.
+			 'regcomp' sets PREG's 'syntax' field accordingly.
+		
+		'REG_ICASE'
+			 says to ignore case; 'regcomp' sets PREG's 'translate' field to a
+			 translate table which ignores case, replacing anything you've put
+			 there before.
+		
+		'REG_NOSUB'
+			 says to set PREG's 'no_sub' field; see POSIX Matching., for
+			 what this means.
+		
+		'REG_NEWLINE'
+			 says that a:
+		
+				* match-any-character operator (*note Match-any-character
+				  Operator::.) doesn't match a newline.
+		
+				* nonmatching list not containing a newline (*note List
+				  Operators::.) matches a newline.
+		
+				* match-beginning-of-line operator (see Match-beginning-of-line Operator.) matches the empty string immediately after a newline, regardless of how 'REG_NOTBOL' is set (see POSIX Matching., for an explanation of REG_NOTBOL').
+		
+				* match-end-of-line operator (*note Match-beginning-of-line Operator::.) matches the empty string immediately before a newline, regardless of how 'REG_NOTEOL' is set (*note POSIX Matching::., for an explanation of 'REG_NOTEOL').
+	
+	Returns：
+			If 'regcomp' successfully compiles the regular expression, it returns zero and sets '*PATTERN_BUFFER' to the compiled pattern. Except for 'syntax' (which it sets as explained above), it also sets the same fields the same way as does the GNU compiling function (*note GNU Regular Expression Compiling::.).
+		
+			If 'regcomp' can't compile the regular expression, it returns one of the error codes listed here.  (Except when noted differently, the syntax of in all examples below is basic regular expression syntax.)
+		
+			'REG_BADRPT'
+				 For example, the consecutive repetition operators '**' in 'a**'
+				 are invalid.  As another example, if the syntax is extended
+				 regular expression syntax, then the repetition operator '*' with
+				 nothing on which to operate in '*' is invalid.
+			
+			'REG_BADBR'
+				 For example, the COUNT '-1' in 'a\{-1' is invalid.
+			
+			'REG_EBRACE'
+				 For example, 'a\{1' is missing a close-interval operator.
+			
+			'REG_EBRACK'
+				 For example, '[a' is missing a close-list operator.
+			
+			'REG_ERANGE'
+				 For example, the range ending point 'z' that collates lower than
+				 does its starting point 'a' in '[z-a]' is invalid.  Also, the
+				 range with the character class '[:alpha:]' as its starting point in
+				 '[[:alpha:]-|]'.
+			
+			'REG_ECTYPE'
+				 For example, the character class name 'foo' in '[[:foo:]' is
+				 invalid.
+			
+			'REG_EPAREN'
+				 For example, 'a\)' is missing an open-group operator and '\(a' is
+				 missing a close-group operator.
+			
+			'REG_ESUBREG'
+				 For example, the back reference '\2' that refers to a nonexistent
+				 subexpression in '\(a\)\2' is invalid.
+			
+			'REG_EEND'
+				 Returned when a regular expression causes no other more specific
+				 error.
+			
+			'REG_EESCAPE'
+				 For example, the trailing backslash '\' in 'a\' is invalid, as is
+				 the one in '\'.
+			
+			'REG_BADPAT'
+				 For example, in the extended regular expression syntax, the empty
+				 group '()' in 'a()b' is invalid.
+			
+			'REG_ESIZE'
+				 Returned when a regular expression needs a pattern buffer larger
+				 than 65536 bytes.
+			
+			'REG_ESPACE'
+				 Returned when a regular expression makes Regex to run out of
+				 memory.
+		
+（2）regexec：POSIX Matching
+
+	Matching the POSIX way means trying to match a null-terminated string starting at its first character.  Once you've compiled a pattern into a pattern buffer (see POSIX Regular Expression Compiling.), you can ask the matcher to match that pattern against a string using:
+
+	int regexec (const regex_t *PREG, const char *STRING, size_t NMATCH, regmatch_t PMATCH[], int EFLAGS)
+
+	Functions：
+		Matching the POSIX way means trying to match a null-terminated string starting at its first character.  Once you've compiled a pattern into a pattern buffer (see POSIX Regular Expression Compiling.), you can ask the matcher to match that pattern against a string using.
+		
+	Parameters：
+		PREG is the address of a pattern buffer for a compiled pattern. STRING is the string you want to match. See Using Byte Offsets, for an explanation of PMATCH.  If you pass zero for NMATCH or you compiled PREG with the compilation flag 'REG_NOSUB' set, then 'regexec' will ignore PMATCH; otherwise, you must allocate it to have at least NMATCH elements.  'regexec' will record NMATCH byte offsets in PMATCH, and set to -1 any unused elements up to PMATCH'[NMATCH]' - 1. 
+		
+		EFLAGS specifies "execution flags"--namely, the two bits 'REG_NOTBOL' and 'REG_NOTEOL' (defined in 'regex.h').  If you set 'REG_NOTBOL', then the match-beginning-of-line operator (*note Match-beginning-of-line Operator::.) always fails to match.  This lets you match against pieces of a line, as you would need to if, say, searching for repeated instances of a given pattern in a line; it would work correctly for patterns both with and without match-beginning-of-line operators. 'REG_NOTEOL' works analogously for the match-end-of-line operator (see Match-end-of-line Operator.); it exists for symmetry.
+	
+	Returns：
+		'regexec' tries to find a match for PREG in STRING according to the syntax in PREG's 'syntax' field.  (*Note POSIX Regular Expression Compiling::, for how to set it.)  The function returns zero if the compiled pattern matches STRING and 'REG_NOMATCH' (defined in 'regex.h') if it doesn't.
+
+	Using Byte Offsets
+	--------------------------
+		In POSIX, variables of type 'regmatch_t' hold analogous information, but are not identical to, GNU's registers (see Using Registers.).
+		
+		To get information about registers in POSIX, pass to 'regexec' a nonzero PMATCH of type 'regmatch_t', i.e., the address of a structure of this type, defined in 'regex.h':
+	
+			 typedef struct
+			 {
+				 regoff_t rm_so;
+				 regoff_t rm_eo;
+			 } regmatch_t;
+	
+	  When reading in See Using Registers, about how the matching function stores the information into the registers, substitute PMATCH for REGS, 'PMATCH[I]->rm_so' for 'REGS->start[I]' and 'PMATCH[I]->rm_eo' for 'REGS->end[I]'.
+	  
+	The Match-end-of-line Operator ('$')
+	---------------------------------------------------
+		This operator can match the empty string either at the end of the string or before a newline character in the string.  Thus, it is said to "anchor" the pattern to the end of a line.
+	
+		It is always represented by '$'.  For example, 'foo$' usually matches, e.g., 'foo' and, e.g., the first three characters of 'foo\nbar'.
+	
+	  	Its interaction with the syntax bits and pattern buffer fields is exactly the dual of '^''s; see the previous section.  (That is, "beginning" becomes "end", "next" becomes "previous", and "after" becomes "before".)
+
+
+（3）regerror：Reporting Errors
+
+	You can call `regerror' with a null ERRBUF and a zero ERRBUF_SIZE to determine how large ERRBUF need be to accommodate `regerror''s error string.
+	
+	size_t regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
+	
+	Function：
+		If either `regcomp' or `regexec' fail, they return a nonzero error code, the possibilities for which are defined in `regex.h'. See POSIX Regular Expression Compiling, and See POSIX Matching, for what these codes mean.  To get an error string corresponding to these codes.
+	
+	Pameters：
+		ERRCODE is an error code, PREG is the address of the pattern buffer which provoked the error, ERRBUF is the error buffer, and ERRBUF_SIZE is ERRBUF's size.
+	
+	Returns：
+		`regerror' returns the size in bytes of the error string corresponding to ERRCODE (including its terminating null).  If ERRBUF and ERRBUF_SIZE are nonzero, it also returns in ERRBUF the first ERRBUF_SIZE - 1 characters of the error string, followed by a null. ERRBUF_SIZE must be a nonnegative number less than or equal to the size in bytes of ERRBUF.
+
+（4）regfree：Freeing POSIX Pattern Buffers
+
+	void regfree (regex_t *PREG)
+
+	Function：
+		To free any allocated fields of a pattern buffer.
+
+	Pameters：
+		PREG is the pattern buffer whose allocated fields you want freed. `regfree' also sets PREG's `allocated' and `used' fields to zero. After freeing a pattern buffer, you need to again compile a regular expression in it (see POSIX Regular Expression Compiling.) before passing it to the matching function (see POSIX Matching.).
+
+	Returns：None.
+
+3. Notice for using Henry Spencer Regex Library
+（1）It shoud be call regfree after regcomp is done, otherwise it would be cause memory leak.
+（2）Restruct/Convert the string RE form to regex_t structure then it would be easy to do matching.
+（3）regmatch_t is used to present the starting position offset of matched string in RE form.
+（4）flags：To choice some options for setup the matching function. Please refer to the web link to get more infomation in detail.：http://www.opengroup.org/onlinepubs/007908799/xsh/regcomp.html
+（5）Include header files when using this RE's library：sys/types.h and regex .h
+
+4. Some examples for using Henry Spencer's Regex Library ：
+
+《Example (1)》
+	#include <regex .h>
+	#include <sys /types.h>
+	#include <stdio .h>
+	 
+	int main(int argc, char ** argv)
+	{
+		if (argc != 3)
+		{
+			printf("Usage: %s RegexString Text\n", argv[0]);
+			return 1;
+		}
+	 
+		const char * pRegexStr = argv[1];
+		const char * pText = argv[2];
+	 
+		regex_t oRegex;
+		int nErrCode = 0;
+		char szErrMsg[1024] = {0};
+		size_t unErrMsgLen = 0;
+	 
+		if ((nErrCode = regcomp(&oRegex, pRegexStr, 0)) == 0)
+		{
+			if ((nErrCode = regexec(&oRegex, pText, 0, NULL, 0)) == 0)
+			{
+				printf("%s matches %s\n", pText, pRegexStr);
+				regfree(&oRegex);
+				return 0;
+			}
+		}
+	 
+		unErrMsgLen = regerror(nErrCode, &oRegex, szErrMsg, sizeof(szErrMsg));
+		unErrMsgLen = unErrMsgLen < sizeof(szErrMsg) ? unErrMsgLen : sizeof(szErrMsg) - 1;
+		szErrMsg[unErrMsgLen] = '\0';
+		printf("ErrMsg: %s\n", szErrMsg);
+	 
+		regfree(&oRegex);
+		return 1;
+	}
+
+	To run the program and testing：
+		$ gcc ex_regex.c -o ex_regex
+		$ ./ex_regex "http:\/\/www\..*\.com" "https://www.taobao.com"
+		regexec() failed to match
+		$ ./ex_regex "http:\/\/www\..*\.com" "http://www.taobao.com"
+		http://www.taobao.com matches http:\/\/www\..*\.com
+
+
+《Example (2)》
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <sys/types.h>
+	#include <regex.h>
+	 
+	int main() {
+		regex_t preg;
+		regmatch_t pmatch[10];
+		size_t nmatch = 10;
+		int cflags = REG_EXTENDED | REG_ICASE;
+		int i, len, rc;
+		char buf[1024], reg[256], str[256];
+	 
+		while(1) {
+			printf("Input exp: ");
+			fgets(reg, 256, stdin);
+			if(reg[0] == '\n') break;
+			strtok(reg,"\n");
+	 
+			printf("Input str: ");
+			fgets(str,256,stdin);
+			if(str[0] == '\n') break;
+			strtok(str,"\n");
+	 
+			if( regcomp(&preg, reg, cflags) != 0 ) {
+				puts("regex compile error!\n");
+				return 1;
+			}
+	 
+			rc = regexec(&preg, str, nmatch, pmatch, 0);
+			regfree(&preg);
+	 
+			if (rc != 0) {
+				printf("no match\n");
+				continue;
+			}
+	 
+			for (i = 0; i < nmatch && pmatch[i].rm_so >= 0; ++i) {
+				len = pmatch[i].rm_eo - pmatch[i].rm_so;
+				strncpy(buf, str + pmatch[i].rm_so, len);
+				buf[len] = '\0';
+				printf("sub pattern %d is %s\n", i, buf);
+			}
+		}
+	 
+		return 0;
+	}
+
+	To run the program and testing：
+		$ ./pmatch
+		Input exp: ([0-9]+)([a-z]+)
+		Input str: 123bcxsfdas89y
+		sub pattern 0 is 123bcxsfdas
+		sub pattern 1 is 123
+		sub pattern 2 is bcxsfdas
+		Input exp:
+
+
+《Example (3)》
+	Please refer to regex/demo/ci_strcmp.c、regex/demo/ci_strcmp.h
+
+	To run the program and testing：
+		$ ./ci_strcmp
+		Input exp: ^[a-z][0-9]+$
+		Input str: a123
+		ci_strcmp(a123,^[a-z][0-9]+$) = -29
+		strcmp_match(a123,^[a-z][0-9]+$) = 1
+		strcmp_regex(a123,^[a-z][0-9]+$) = 0
+		Input exp: ^[0-9][a-z]+$
+		Input str: a123
+		ci_strcmp(a123,^[0-9][a-z]+$) = -29
+		strcmp_match(a123,^[0-9][a-z]+$) = 1
+		strcmp_regex(a123,^[0-9][a-z]+$) = 1
+		Input exp:
+
+
+《Example (4)》
+	/** 
+		 @file			regex_example.c
+		 @author		Mitch Richling <http://www.mitchr.me/>
+		 @Copyright Copyright 1994 by Mitch Richling.	All rights reserved.
+		 @brief		 UNIX regex tools@EOL
+		 @Keywords	UNIX regular expressions regex
+		 @Std			 ISOC POSIX.2 (IEEE Std 103.2) BSD4.3
+	
+								This is an example program intended to illustrate
+								very basic use of regular expressions.
+		
+								Grumpy programmer note: IEEE Std 1003.2, generally
+								referred to as 'POSIX.2' is a bit vague regarding
+								several details like how back references work.	It also
+								has a couple of errors (like how a single ')' is treated
+								in a regular expression.	Because of this, most actual
+								implementations of the standard will have several minor
+								inconsistencies that one must watch out for.	My best
+								advice is to "read the man page" on the platforms you
+								wish to run on and to avoid exotic things.	For example,
+								avoid things like the BSD REG_NOSPEC and REG_PEND
+								options.	Another option is to simply carry your
+								favorite regular expression library with you.	For
+								example, the BOOST library has a very nice regex class
+								for C++ programmers.	PCRE is probably the most popular
+								alternative, FOSS regular expression library available.
+	
+		 @Tested		
+								- Solaris 2.8
+								- MacOS X.2
+								- Linux (RH 7.3)
+	 */
+	
+	#include <sys/types.h>					/* UNIX types			POSIX */
+	#include <regex.h>							/* Regular Exp		 POSIX */
+	#include <stdio.h>							/* I/O lib				 ISOC	*/
+	#include <string.h>						 /* Strings				 ISOC	*/
+	#include <stdlib.h>						 /* Standard Lib		ISOC	*/
+	
+	#define MAX_SUB_EXPR_CNT 256
+	#define MAX_SUB_EXPR_LEN 256
+	#define MAX_ERR_STR_LEN	256
+	
+	int main(int argc, char *argv[]);
+	
+	int main(int argc, char *argv[]) {
+		int i;																/* Loop variable.													*/
+		char p[MAX_SUB_EXPR_LEN];						 /* For string manipulation								 */
+		regex_t aCmpRegex;										/* Pointer to our compiled regex					 */
+		char *aStrRegex;											/* Pointer to the string holding the regex */
+		regmatch_t pMatch[MAX_SUB_EXPR_CNT];	/* Hold partial matches.									 */
+		char **aLineToMatch;									/* Holds each line that we wish to match	 */
+		int result;													 /* Return from regcomp() and regexec()		 */
+		char outMsgBuf[MAX_ERR_STR_LEN];			/* Holds error messages from regerror()		*/
+		char *testStrings[] = { "This should match... hello",
+														"This could match... hello!",
+														"More than one hello.. hello",
+														"No chance of a match...",
+														NULL};
+	
+		/* use aStrRegex for readability. */
+		aStrRegex = "(.*)(hello)+";
+		printf("Regex to use: %s\n", aStrRegex);
+	
+		/* Compile the regex */
+		if( (result = regcomp(&aCmpRegex, aStrRegex, REG_EXTENDED)) ) {
+			printf("Error compiling regex(%d).\n", result);
+			regerror(result, &aCmpRegex, outMsgBuf, sizeof(outMsgBuf));
+			printf("Error msg: %s\n", outMsgBuf);
+			exit(1);
+		} /* end if */
+	
+		/*	Possible last argument to regcomp (||'ed together):
+					REG_EXTENDED	Use extended regular expressions
+					REG_BASIC		 Use basic regular expressions
+					REG_NOSPEC		Special character support off (Not POSIX.2)
+					REG_ICASE		 Ignore upper/lower case distinctions
+					REG_NOSUB		 No sub-strings (just check for match/no match)
+					REG_NEWLINE	 Compile for newline-sensitive matching
+					REG_PEND			Specify alternate string ending (Not POSIX.2) */
+	
+	
+		/* Apply our regular expression to some strings. */
+		for(aLineToMatch=testStrings; *aLineToMatch != NULL; aLineToMatch++) {
+			printf("String: %s\n", *aLineToMatch);
+			printf("				%s\n", "0123456789012345678901234567890123456789");
+			printf("				%s\n", "0				 1				 2				 3");
+			/* compare and check result (MAX_SUB_EXPR_CNT max sub-expressions).*/
+			if( !(result = regexec(&aCmpRegex, *aLineToMatch, MAX_SUB_EXPR_CNT, pMatch, 0)) ) {
+				/* Last argument to regexec (||'ed together):
+					 REG_NOTBOL		Start of the string is NOT the start of a line
+					 REG_NOTEOL		$ shouldn't match end of string (gotta have a newline)
+					 REG_STARTEND	Not POSIX.2 */
+				printf("Result: We have a match!\n");
+				for(i=0;i<=(int)aCmpRegex.re_nsub;i++) {
+					printf("Match(%2d/%2d): (%2d,%2d): ", 
+								 i, 
+								 (int)(aCmpRegex.re_nsub), 
+								 (int)(pMatch[i].rm_so), 
+								 (int)(pMatch[i].rm_eo));
+	
+						if( (pMatch[i].rm_so >= 0) && (pMatch[i].rm_eo >= 1) && 
+								(pMatch[i].rm_so != pMatch[i].rm_eo) ) {
+							strncpy(p, &((*aLineToMatch)[pMatch[i].rm_so]), pMatch[i].rm_eo-pMatch[i].rm_so);
+							p[pMatch[i].rm_eo-pMatch[i].rm_so] = '\0';
+							printf("'%s'", p);
+						} /* end if */
+						printf("\n");
+				} /* end for */
+				printf("\n");
+			} else {
+				switch(result) {
+					case REG_NOMATCH	 	: printf("String did not match the pattern\n");				break;
+					//Some typical return codes:
+					case REG_BADPAT			: printf("invalid regular expression\n");							break;
+					case REG_ECOLLATE		: printf("invalid collating element\n");							break;
+					case REG_ECTYPE			: printf("invalid character class\n");								break;
+					case REG_EESCAPE	 	: printf("`\' applied to unescapable character\n");			break;
+					case REG_ESUBREG	 	: printf("invalid backreference number\n");					break;
+					case REG_EBRACK			: printf("brackets `[ ]' not balanced\n");						break;
+					case REG_EPAREN			: printf("parentheses `( )' not balanced\n");					break;
+					case REG_EBRACE			: printf("braces `{ }' not balanced\n");							break;
+					case REG_BADBR		 	: printf("invalid repetition count(s) in `{ }'\n");				break;
+					case REG_ERANGE			: printf("invalid character range in `[ ]'\n");					break;
+					case REG_ESPACE			: printf("Ran out of memory\n");									break;
+					case REG_BADRPT			: printf("`?', `*', or `+' operand invalid\n");					break;
+					case REG_EMPTY		 	: printf("empty (sub)expression\n");								break;
+					case REG_ASSERT			: printf("can't happen - you found a bug\n");				break;
+					case REG_INVARG			: printf("A bad option was passed\n");							break;
+					//case REG_ILLSEQ			: printf("illegal byte sequence\n");									break;
+					default								: printf("Unknown error\n");											break;
+				} /* end switch */
+				regerror(result, &aCmpRegex, outMsgBuf, sizeof(outMsgBuf));
+				printf("Result: Error msg: %s\n\n", outMsgBuf);
+			} /* end if/else */
+		} /* end for */
+		
+		/* Free up resources for the regular expression */
+		regfree(&aCmpRegex);
+	
+		exit(0);
+	} /* end func main */
+
+	To run the program and testing：
+	$ ./regex_example 
+	Regex to use: (.*)(hello)+
+	String: This should match... hello
+									0123456789012345678901234567890123456789
+									0                                1                               2                               3
+	Result: We have a match!
+	Match( 0/ 2): ( 0,26): 'This should match... hello'
+	Match( 1/ 2): ( 0,21): 'This should match... '
+	Match( 2/ 2): (21,26): 'hello'
+	
+	String: This could match... hello!
+									0123456789012345678901234567890123456789
+									0                                1                               2                               3
+	Result: We have a match!
+	Match( 0/ 2): ( 0,25): 'This could match... hello'
+	Match( 1/ 2): ( 0,20): 'This could match... '
+	Match( 2/ 2): (20,25): 'hello'
+	
+	String: More than one hello.. hello
+									0123456789012345678901234567890123456789
+									0                                1                               2                               3
+	Result: We have a match!
+	Match( 0/ 2): ( 0,27): 'More than one hello.. hello'
+	Match( 1/ 2): ( 0,22): 'More than one hello.. '
+	Match( 2/ 2): (22,27): 'hello'
+	
+	String: No chance of a match...
+									0123456789012345678901234567890123456789
+									0                                1                               2                               3
+	String did not match the pattern
+	Result: Error msg: regexec() failed to match	

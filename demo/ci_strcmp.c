@@ -281,17 +281,17 @@ int strcasecmp_regex(const char*str, const char*regex)
 #include <stdlib.h>
 int main()
 {
-	char reg[4096], str[256];
+	char reg[4096], str[4096];
 	int rc;
 	while(1)
 	{
 		printf("Input exp: ");
-		fgets(reg,256,stdin);
+		fgets(reg,4096,stdin);
 		if(reg[0] == '\n')
 			break;
 		strtok(reg,"\n");
 		printf("Input str: ");
-		fgets(str,256,stdin);
+		fgets(str,4096,stdin);
 		if(str[0] == '\n')
 			break;
 		strtok(str,"\n");
