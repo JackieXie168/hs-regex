@@ -1,25 +1,17 @@
-SHELL = /bin/sh
-
-srcdir=@srcdir@
-VPATH=@srcdir@
-
-CC=@CC@
-RANLIB=@RANLIB@
-
 # You probably want to take -DREDEBUG out of CFLAGS, and put something like
 # -O in, *after* testing (-DREDEBUG strengthens testing by enabling a lot of
 # internal assertion checking and some debugging facilities).
 # Put -Dconst= in for a pre-ANSI compiler.
 # Do not take -DPOSIX_MISTAKE out.
 # REGCFLAGS isn't important to you (it's for my use in some special contexts).
-CFLAGS=-I$(srcdir) -DPOSIX_MISTAKE @CFLAGS@
+CFLAGS=-I. -DPOSIX_MISTAKE -DREDEBUG $(REGCFLAGS)
 
 # If you have a pre-ANSI compiler, put -o into MKHFLAGS.  If you want
 # the Berkeley __P macro, put -b in.
 MKHFLAGS=
 
 # Flags for linking but not compiling, if any.
-LDFLAGS=@LDFLAGS@
+LDFLAGS=
 
 # Extra libraries for linking, if any.
 LIBS=
@@ -39,16 +31,13 @@ JUNKLINT=possible pointer alignment|null effect
 # arrangements to build forward-reference header files
 .SUFFIXES:	.ih .h
 .c.ih:
-	sh $(srcdir)/mkh $(MKHFLAGS) -p $< >$(srcdir)/$@
-
-all lib: libregex.a
-
-libregex.a: $(OBJPRODN)
-	rm -f libregex.a
-	ar cr libregex.a $(OBJPRODN)
-	$(RANLIB) libregex.a
+	sh ./mkh $(MKHFLAGS) -p $< >$@
 
 default:	r
+
+lib:	purge $(OBJPRODN)
+	rm -f libregex.a
+	ar crv libregex.a $(OBJPRODN)
 
 purge:
 	rm -f *.o
@@ -57,9 +46,9 @@ purge:
 REGEXH=regex.h
 REGEXHSRC=regex2.h $(REGSRC)
 $(REGEXH):	$(REGEXHSRC) mkh
-	sh ./mkh $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) >regex.h
-#cmp -s regex.tmp regex.h 2>/dev/null || cp regex.tmp regex.h
-#rm -f regex.tmp
+	sh ./mkh $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) >regex.tmp
+	cmp -s regex.tmp regex.h 2>/dev/null || cp regex.tmp regex.h
+	rm -f regex.tmp
 
 # dependencies
 $(OBJPRODN) debug.o:	utils.h regex.h regex2.h
@@ -134,7 +123,7 @@ tidy:
 	rm -f junk* core core.* *.core dtr *.tmp lint
 
 clean:	tidy
-	rm -f *.o *.s re libregex.a
+	rm -f *.o *.s *.ih re libregex.a
 
 # don't do this one unless you know what you're doing
 spotless:	clean

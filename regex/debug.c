@@ -10,8 +10,6 @@
 #include "regex2.h"
 #include "debug.ih"
 
-/* $Id: debug.c,v 1.4 1998/12/28 09:35:00 sas Exp $ */
-
 /*
  - regprint - print a regexp for debugging
  == void regprint(regex_t *r, FILE *d);
@@ -218,7 +216,7 @@ FILE *d;
 			fprintf(d, ">");
 			break;
 		default:
-			fprintf(d, "!%ld(%ld)!", OP(*s), opnd);
+			fprintf(d, "!%d(%d)!", OP(*s), opnd);
 			break;
 		}
 		if (!done)

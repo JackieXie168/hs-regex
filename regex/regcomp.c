@@ -1,5 +1,3 @@
-/* $Id: regcomp.c,v 1.6 1998/12/28 09:44:01 sas Exp $ */
-
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,14 +44,14 @@ static char nuls[10];		/* place to point scanner in event of error */
 #define	MORE2()	(p->next+1 < p->end)
 #define	SEE(c)	(MORE() && PEEK() == (c))
 #define	SEETWO(a, b)	(MORE() && MORE2() && PEEK() == (a) && PEEK2() == (b))
-#define	EAT(c)	((SEE(c)) ? (NEXT1(), 1) : 0)
+#define	EAT(c)	((SEE(c)) ? (NEXT(), 1) : 0)
 #define	EATTWO(a, b)	((SEETWO(a, b)) ? (NEXT2(), 1) : 0)
-#define	NEXT1()	(p->next++)
+#define	NEXT()	(p->next++)
 #define	NEXT2()	(p->next += 2)
 #define	NEXTn(n)	(p->next += (n))
 #define	GETNEXT()	(*p->next++)
 #define	SETERROR(e)	seterr(p, (e))
-#define	REQUIRE(co, e)	((void)((co) || SETERROR(e)))
+#define	REQUIRE(co, e)	((co) || SETERROR(e))
 #define	MUSTSEE(c, e)	(REQUIRE(MORE() && PEEK() == (c), e))
 #define	MUSTEAT(c, e)	(REQUIRE(MORE() && GETNEXT() == (c), e))
 #define	MUSTNOTSEE(c, e)	(REQUIRE(!MORE() || PEEK() != (c), e))
@@ -74,7 +72,7 @@ static int never = 0;		/* for use in asserts; shuts lint up */
 
 /*
  - regcomp - interface for parser and compilation
- = API_EXPORT(int) regcomp(regex_t *, const char *, int);
+ = extern int regcomp(regex_t *, const char *, int);
  = #define	REG_BASIC	0000
  = #define	REG_EXTENDED	0001
  = #define	REG_ICASE	0002
@@ -84,7 +82,7 @@ static int never = 0;		/* for use in asserts; shuts lint up */
  = #define	REG_PEND	0040
  = #define	REG_DUMP	0200
  */
-API_EXPORT(int)			/* 0 success, otherwise REG_something */
+int				/* 0 success, otherwise REG_something */
 regcomp(preg, pattern, cflags)
 regex_t *preg;
 const char *pattern;
@@ -194,8 +192,8 @@ register struct parse *p;
 int stop;			/* character this ERE should end at */
 {
 	register char c;
-	register sopno prevback = 0;
-	register sopno prevfwd = 0;
+	register sopno prevback;
+	register sopno prevfwd;
 	register sopno conc;
 	register int first = 1;		/* is this the first alternative? */
 
@@ -326,7 +324,7 @@ register struct parse *p;
 	if (!( c == '*' || c == '+' || c == '?' ||
 				(c == '{' && MORE2() && isdigit(PEEK2())) ))
 		return;		/* no repetition, we're done */
-	NEXT1();
+	NEXT();
 
 	REQUIRE(!wascaret, REG_BADRPT);
 	switch (c) {
@@ -363,7 +361,7 @@ register struct parse *p;
 		repeat(p, pos, count, count2);
 		if (!EAT('}')) {	/* error heuristics */
 			while (MORE() && PEEK() != '}')
-				NEXT1();
+				NEXT();
 			REQUIRE(MORE(), REG_EBRACE);
 			SETERROR(REG_BADBR);
 		}
@@ -518,7 +516,7 @@ int starordinary;		/* is a leading * an ordinary character? */
 		REQUIRE(starordinary, REG_BADRPT);
 		/* FALLTHROUGH */
 	default:
-		ordinary(p, c &~ BACKSL);
+		ordinary(p, (char)c);	/* takes off BACKSL, if any */
 		break;
 	}
 
@@ -541,7 +539,7 @@ int starordinary;		/* is a leading * an ordinary character? */
 		repeat(p, pos, count, count2);
 		if (!EATTWO('\\', '}')) {	/* error heuristics */
 			while (MORE() && !SEETWO('\\', '}'))
-				NEXT1();
+				NEXT();
 			REQUIRE(MORE(), REG_EBRACE);
 			SETERROR(REG_BADBR);
 		}
@@ -699,7 +697,7 @@ register cset *cs;
 		start = p_b_symbol(p);
 		if (SEE('-') && MORE2() && PEEK2() != ']') {
 			/* range */
-			NEXT1();
+			NEXT();
 			if (EAT('-'))
 				finish = '-';
 			else
@@ -730,7 +728,7 @@ register cset *cs;
 	register char c;
 
 	while (MORE() && isalpha(PEEK()))
-		NEXT1();
+		NEXT();
 	len = p->next - sp;
 	for (cp = cclasses; cp->name != NULL; cp++)
 		if (strncmp(cp->name, sp, len) == 0 && cp->name[len] == '\0')
@@ -799,7 +797,7 @@ int endc;			/* name ended by endc,']' */
 	register int len;
 
 	while (MORE() && !SEETWO(endc, ']'))
-		NEXT1();
+		NEXT();
 	if (!MORE()) {
 		SETERROR(REG_EBRACK);
 		return(0);
@@ -1056,7 +1054,7 @@ freeset(p, cs)
 register struct parse *p;
 register cset *cs;
 {
-	register unsigned int i;
+	register int i;
 	register cset *top = &p->g->sets[p->g->ncsets];
 	register size_t css = (size_t)p->g->csetsize;
 
@@ -1082,7 +1080,7 @@ register struct parse *p;
 register cset *cs;
 {
 	register uch h = cs->hash;
-	register unsigned int i;
+	register int i;
 	register cset *top = &p->g->sets[p->g->ncsets];
 	register cset *cs2;
 	register size_t css = (size_t)p->g->csetsize;
@@ -1115,7 +1113,7 @@ firstch(p, cs)
 register struct parse *p;
 register cset *cs;
 {
-	register unsigned int i;
+	register int i;
 	register size_t css = (size_t)p->g->csetsize;
 
 	for (i = 0; i < css; i++)
@@ -1134,7 +1132,7 @@ nch(p, cs)
 register struct parse *p;
 register cset *cs;
 {
-	register unsigned int i;
+	register int i;
 	register size_t css = (size_t)p->g->csetsize;
 	register int n = 0;
 
@@ -1171,6 +1169,63 @@ register char *cp;
 	cs->multis[cs->smultis - 1] = '\0';
 }
 
+/*
+ - mcsub - subtract a collating element from a cset
+ == static void mcsub(register cset *cs, register char *cp);
+ */
+static void
+mcsub(cs, cp)
+register cset *cs;
+register char *cp;
+{
+	register char *fp = mcfind(cs, cp);
+	register size_t len = strlen(fp);
+
+	assert(fp != NULL);
+	(void) memmove(fp, fp + len + 1,
+				cs->smultis - (fp + len + 1 - cs->multis));
+	cs->smultis -= len;
+
+	if (cs->smultis == 0) {
+		free(cs->multis);
+		cs->multis = NULL;
+		return;
+	}
+
+	cs->multis = realloc(cs->multis, cs->smultis);
+	assert(cs->multis != NULL);
+}
+
+/*
+ - mcin - is a collating element in a cset?
+ == static int mcin(register cset *cs, register char *cp);
+ */
+static int
+mcin(cs, cp)
+register cset *cs;
+register char *cp;
+{
+	return(mcfind(cs, cp) != NULL);
+}
+
+/*
+ - mcfind - find a collating element in a cset
+ == static char *mcfind(register cset *cs, register char *cp);
+ */
+static char *
+mcfind(cs, cp)
+register cset *cs;
+register char *cp;
+{
+	register char *p;
+
+	if (cs->multis == NULL)
+		return(NULL);
+	for (p = cs->multis; *p != '\0'; p += strlen(p) + 1)
+		if (strcmp(cp, p) == 0)
+			return(p);
+	return(NULL);
+}
 
 /*
  - mcinvert - invert the list of collating elements in a cset
@@ -1440,8 +1495,8 @@ struct parse *p;
 register struct re_guts *g;
 {
 	register sop *scan;
-	sop *start = NULL;
-	register sop *newstart = NULL;
+	sop *start;
+	register sop *newstart;
 	register sopno newlen;
 	register sop s;
 	register char *cp;

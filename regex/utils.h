@@ -1,11 +1,9 @@
-/* $Id: utils.h,v 1.6 1998/12/28 09:44:02 sas Exp $ */
-
 /* utility definitions */
-#ifndef _POSIX2_RE_DUP_MAX
-#define _POSIX2_RE_DUP_MAX   255
+#ifdef _POSIX2_RE_DUP_MAX
+#define	DUPMAX	_POSIX2_RE_DUP_MAX
+#else
+#define	DUPMAX	255
 #endif
-
-#define	DUPMAX		_POSIX2_RE_DUP_MAX	/* xxx is this right? */
 #define	INFINITY	(DUPMAX + 1)
 #define	NC		(CHAR_MAX - CHAR_MIN + 1)
 typedef unsigned char uch;
