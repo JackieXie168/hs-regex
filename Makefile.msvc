@@ -1,0 +1,431 @@
+#from c-ares Makefile.msvc : here it comes
+# Copyright (C) 2009-2013 by Daniel Stenberg
+#
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies and that both that copyright
+# notice and this permission notice appear in supporting
+# documentation, and that the name of M.I.T. not be used in
+# advertising or publicity pertaining to distribution of the
+# software without specific, written prior permission.
+# M.I.T. makes no representations about the suitability of
+# this software for any purpose.  It is provided "as is"
+# without express or implied warranty.
+
+# ------------------------------------------------------------------------------
+#
+# Makefile for building c-ares libraries and sample programs with MSVC.
+#
+# Usage: nmake /f makefile.msvc CFG=<config> <target>
+# 
+# <config> must be one of: [ lib-release | lib-debug | dll-release | dll-debug }
+# <target> must be one of: [ ALL | c-ares | acountry | adig | ahost | clean }
+# 
+# If a <target> other than ALL or clean is given, <config> becomes mandatory.
+# 
+# If neither <config> nor <target> are specified this results in
+# all targets being built for all <config> c-ares library types.
+#
+# This makefile must be processed from the subdir where it is located.
+#
+# All results are generated below a subdirectory named msvcXXX.
+#
+# ------------------------------------------------------------------------------
+
+NAME = hsregex
+
+# ------------------------------------------------
+# c-ares static and dynamic libraries common base
+# file names for release and debug configurations
+# ------------------------------------------------
+
+STA_LIB_REL = lib$(NAME)
+DYN_LIB_REL = $(NAME)
+STA_LIB_DBG = $(STA_LIB_REL)d
+DYN_LIB_DBG = $(DYN_LIB_REL)d
+
+# -------------------------------------------
+# Base names for c-ares DLL import libraries
+# -------------------------------------------
+
+IMP_LIB_REL = $(DYN_LIB_REL)
+IMP_LIB_DBG = $(DYN_LIB_DBG)
+
+# --------------------------
+# Runtime library selection
+# --------------------------
+
+RTLIB  = /MD
+RTLIBD = /MDd
+
+!IF "$(RTLIBCFG)" == "static"
+RTLIB  = /MT
+RTLIBD = /MTd
+!ENDIF
+
+# --------------------------------------------------------
+# Define USE_WATT32 to 1 to use the Watt-32 tcp/ip stack,
+# otherwise Winsock tcp/ip stack will be used as default.
+# --------------------------------------------------------
+
+USE_WATT32 = 0
+
+# -------------------------------------------
+# Detect NMAKE version deducing MSVC version
+# -------------------------------------------
+
+!IFNDEF _NMAKE_VER
+!  MESSAGE Macro _NMAKE_VER not defined.
+!  MESSAGE Use MSVC's NMAKE to process this makefile.
+!  ERROR   See previous message.
+!ENDIF
+
+!IF     "$(_NMAKE_VER)" == "6.00.8168.0"
+CC_VERS_NUM = 60
+!ELSEIF "$(_NMAKE_VER)" == "6.00.9782.0"
+CC_VERS_NUM = 60
+!ELSEIF "$(_NMAKE_VER)" == "7.00.8882"
+CC_VERS_NUM = 70
+!ELSEIF "$(_NMAKE_VER)" == "7.00.9466"
+CC_VERS_NUM = 70
+!ELSEIF "$(_NMAKE_VER)" == "7.00.9955"
+CC_VERS_NUM = 70
+!ELSEIF "$(_NMAKE_VER)" == "7.10.2240.8"
+CC_VERS_NUM = 71
+!ELSEIF "$(_NMAKE_VER)" == "7.10.3077"
+CC_VERS_NUM = 71
+!ELSEIF "$(_NMAKE_VER)" == "8.00.40607.16"
+CC_VERS_NUM = 80
+!ELSEIF "$(_NMAKE_VER)" == "8.00.50727.42"
+CC_VERS_NUM = 80
+!ELSEIF "$(_NMAKE_VER)" == "8.00.50727.762"
+CC_VERS_NUM = 80
+!ELSEIF "$(_NMAKE_VER)" == "9.00.20706.01"
+CC_VERS_NUM = 90
+!ELSEIF "$(_NMAKE_VER)" == "9.00.21022.08"
+CC_VERS_NUM = 90
+!ELSEIF "$(_NMAKE_VER)" == "9.00.30729.01"
+CC_VERS_NUM = 90
+!ELSEIF "$(_NMAKE_VER)" == "10.00.20506.01"
+CC_VERS_NUM = 100
+!ELSEIF "$(_NMAKE_VER)" == "10.00.21003.01"
+CC_VERS_NUM = 100
+!ELSEIF "$(_NMAKE_VER)" == "10.00.30128.01"
+CC_VERS_NUM = 100
+!ELSEIF "$(_NMAKE_VER)" == "10.00.30319.01"
+CC_VERS_NUM = 100
+!ELSEIF "$(_NMAKE_VER)" == "10.00.40219.01"
+CC_VERS_NUM = 100
+!ELSEIF "$(_NMAKE_VER)" == "11.00.50522.1"
+CC_VERS_NUM = 110
+!ELSEIF "$(_NMAKE_VER)" == "11.00.50727.1"
+CC_VERS_NUM = 110
+!ELSEIF "$(_NMAKE_VER)" == "11.00.51106.1"
+CC_VERS_NUM = 110
+!ELSEIF "$(_NMAKE_VER)" == "11.00.60315.1"
+CC_VERS_NUM = 110
+!ELSE
+!  MESSAGE Unknown value for _NMAKE_VER macro: "$(_NMAKE_VER)"
+!  MESSAGE Please, report this condition on the c-ares development
+!  MESSAGE mailing list: http://cool.haxx.se/mailman/listinfo/c-ares/
+!  ERROR   See previous message.
+!ENDIF
+
+CC_VERS_STR = msvc$(CC_VERS_NUM)
+
+# ----------------------------------------------------
+# Verify that current subdir is the c-ares source one
+# ----------------------------------------------------
+
+
+# ------------------------------------------------------------------
+# Base subdir is the common root from which other subdirs will hang,
+# the name depends on MSVC version being used when building c-ares.
+# ------------------------------------------------------------------
+
+BASE_DIR = .\$(CC_VERS_STR)
+
+# ----------------------------------------
+# Subdir holding sources for all projects
+# ----------------------------------------
+
+SRCDIR = .
+
+# -----------------------------
+# Default installation subdirs
+# -----------------------------
+
+!IFNDEF INSTALL_DIR
+INSTALL_DIR = .
+!ENDIF
+
+!IFNDEF INSTALL_DIR_LIB
+INSTALL_DIR_LIB = $(INSTALL_DIR)\lib
+!ENDIF
+
+!IFNDEF INSTALL_DIR_INC
+INSTALL_DIR_INC = $(INSTALL_DIR)\include
+!ENDIF
+
+# -------------------------
+# Configuration validation
+# -------------------------
+
+VALID_CFGSET = FALSE
+!IF "$(CFG)" == "lib-release" || "$(CFG)" == "lib-debug" || \
+    "$(CFG)" == "dll-release" || "$(CFG)" == "dll-debug"
+VALID_CFGSET = TRUE
+!ENDIF
+
+!IF "$(VALID_CFGSET)" == "FALSE" && "$(CFG)" != ""
+!  MESSAGE MSVC c-ares makefile
+!  MESSAGE
+!  MESSAGE Usage: nmake /f makefile.msvc CFG=<config> <target>
+!  MESSAGE
+!  MESSAGE <config> must be one of: [ lib-release | lib-debug | dll-release | dll-debug }
+!  MESSAGE <target> must be one of: [ ALL | c-ares | acountry | adig | ahost | clean }
+!  MESSAGE
+!  MESSAGE If a <target> other than ALL or clean is given, <config> becomes mandatory.
+!  MESSAGE
+!  MESSAGE If neither <config> nor <target> are specified this results in
+!  MESSAGE all targets being built for all <config> c-ares library types.
+!  MESSAGE
+!  ERROR Choose a valid configuration.
+!ENDIF
+
+# --------------------------------------------------------
+# Project subdirs independent of configuration being used
+# --------------------------------------------------------
+
+WIN32_DIR = $(BASE_DIR)\src
+
+# ---------------------------------------------------
+# Subdirs which are configuration dependent are only
+# defined when a valid configuration has been given.
+# ---------------------------------------------------
+
+!IF "$(VALID_CFGSET)" == "TRUE"
+WIN32_OUTDIR = $(WIN32_DIR)\$(CFG)
+WIN32_OBJDIR = $(WIN32_OUTDIR)\obj
+!ELSE
+!UNDEF WIN32_OUTDIR
+!UNDEF WIN32_OBJDIR
+!ENDIF
+
+# -------------------------------------
+# Settings that depend on tcp/ip stack
+# -------------------------------------
+
+!IF "$(USE_WATT32)" == "1"
+CFLAGS  = /UWIN32 /DWATT32 /I$(WATT_ROOT)\inc
+EX_LIBS_REL = $(WATT_ROOT)\lib\wattcpvc_imp.lib
+EX_LIBS_DBG = $(WATT_ROOT)\lib\wattcpvc_imp_d.lib
+!ELSE
+CFLAGS  = /DWIN32 /I.
+EX_LIBS_REL = ws2_32.lib advapi32.lib kernel32.lib
+EX_LIBS_DBG = ws2_32.lib advapi32.lib kernel32.lib
+!ENDIF
+
+# -----------------------------------------
+# Switches that depend on compiler version
+# -----------------------------------------
+
+!IF $(CC_VERS_NUM) == 60
+PDB_NONE            = /pdb:none
+PDBTYPE_CONSOLIDATE = /pdbtype:consolidate
+!ELSE
+!UNDEF PDB_NONE
+!UNDEF PDBTYPE_CONSOLIDATE
+!ENDIF
+
+!IF $(CC_VERS_NUM) <= 70
+RT_ERROR_CHECKING = /GZ
+!ELSE
+RT_ERROR_CHECKING = /RTCsu
+!ENDIF
+
+
+
+# ----------------------------
+# Assorted commands and flags
+# ----------------------------
+
+CC_CMD_REL = cl.exe /nologo $(RTLIB) /DNDEBUG /O2
+CC_CMD_DBG = cl.exe /nologo $(RTLIBD) /D_DEBUG /Od /Zi $(RT_ERROR_CHECKING)
+CC_CFLAGS  = $(CFLAGS) /I. /W3 /EHsc /FD /Iinclude /I. /DBUILDING_HSREGEX /D_WINDOWS /DWIN32
+
+RC_CMD_REL = rc.exe /l 0x409 /d "NDEBUG"
+RC_CMD_DBG = rc.exe /l 0x409 /d "_DEBUG"
+
+LINK_CMD_LIB = link.exe /lib /nologo
+LINK_CMD_DLL = link.exe /dll /nologo /incremental:no /fixed:no
+LINK_CMD_EXE = link.exe /nologo /incremental:no /fixed:no /subsystem:console
+
+LINK_CMD_EXE_REL = $(LINK_CMD_EXE) /release $(PDB_NONE)
+LINK_CMD_EXE_DBG = $(LINK_CMD_EXE) /debug $(PDBTYPE_CONSOLIDATE)
+
+# ---------------------------------
+# Configuration dependent settings
+# ---------------------------------
+
+!IF "$(CFG)" == "lib-release"
+WIN32_TARGET = $(STA_LIB_REL).lib
+WIN32_CFLAGS = /DWIN32_BUILDING_LIBRARY /DWIN32_STATICLIB
+WIN32_LFLAGS =
+SPROG_CFLAGS = /DWIN32_STATICLIB
+SPROG_LFLAGS = /libpath:$(WIN32_OUTDIR) $(EX_LIBS_REL) $(STA_LIB_REL).lib
+WIN32_LINK   = $(LINK_CMD_LIB)
+SPROG_LINK   = $(LINK_CMD_EXE_REL)
+CC_CMD       = $(CC_CMD_REL)
+!ENDIF
+
+!IF "$(CFG)" == "lib-debug"
+WIN32_TARGET = $(STA_LIB_DBG).lib
+WIN32_CFLAGS = /DWIN32_BUILDING_LIBRARY /DWIN32_STATICLIB /DDEBUGBUILD
+WIN32_LFLAGS =
+SPROG_CFLAGS = /DWIN32_STATICLIB
+SPROG_LFLAGS = /libpath:$(WIN32_OUTDIR) $(EX_LIBS_DBG) $(STA_LIB_DBG).lib
+WIN32_LINK   = $(LINK_CMD_LIB)
+SPROG_LINK   = $(LINK_CMD_EXE_DBG)
+CC_CMD       = $(CC_CMD_DBG)
+!ENDIF
+
+!IF "$(CFG)" == "dll-release"
+WIN32_TARGET = $(DYN_LIB_REL).dll
+WIN32_CFLAGS = /DWIN32_BUILDING_LIBRARY
+WIN32_LFLAGS = /release $(EX_LIBS_REL) /implib:$(WIN32_OUTDIR)\$(IMP_LIB_REL).lib $(PDB_NONE) 
+SPROG_CFLAGS =
+SPROG_LFLAGS = /libpath:$(WIN32_OUTDIR) $(EX_LIBS_REL) $(IMP_LIB_REL).lib
+WIN32_LINK   = $(LINK_CMD_DLL)
+SPROG_LINK   = $(LINK_CMD_EXE_REL)
+CC_CMD       = $(CC_CMD_REL)
+USE_RES_FILE = TRUE
+RC_CMD       = $(RC_CMD_REL)
+!ENDIF
+
+!IF "$(CFG)" == "dll-debug"
+WIN32_TARGET = $(DYN_LIB_DBG).dll
+WIN32_CFLAGS = /DWIN32_BUILDING_LIBRARY /DDEBUGBUILD
+WIN32_LFLAGS = /debug $(EX_LIBS_DBG) /implib:$(WIN32_OUTDIR)\$(IMP_LIB_DBG).lib /pdb:$(WIN32_OUTDIR)\$(DYN_LIB_DBG).pdb $(PDBTYPE_CONSOLIDATE) 
+SPROG_CFLAGS =
+SPROG_LFLAGS = /libpath:$(WIN32_OUTDIR) $(EX_LIBS_DBG) $(IMP_LIB_DBG).lib
+WIN32_LINK   = $(LINK_CMD_DLL)
+SPROG_LINK   = $(LINK_CMD_EXE_DBG)
+CC_CMD       = $(CC_CMD_DBG)
+USE_RES_FILE = TRUE
+RC_CMD       = $(RC_CMD_DBG)
+!ENDIF
+
+CSOURCES=$(SRCDIR)\regexec.c \
+                $(SRCDIR)\regerror.c \
+                $(SRCDIR)\regfree.c \
+                $(SRCDIR)\regcomp.c
+
+# ----------------------------
+# Build lists of object files
+# ----------------------------
+
+!IF "$(VALID_CFGSET)" == "TRUE"
+
+
+WIN32_OBJS = $(WIN32_OBJDIR)\regexec.obj \
+                    $(WIN32_OBJDIR)\regerror.obj \
+                    $(WIN32_OBJDIR)\regfree.obj \
+                    $(WIN32_OBJDIR)\regcomp.obj
+
+!ENDIF
+
+# --------------------------------
+# Only our custom inference rules
+# --------------------------------
+
+.SUFFIXES:
+.SUFFIXES: .c .cpp .rc
+
+{$(SRCDIR)}.rc{$(WIN32_OBJDIR)}.res:
+    $(RC_CMD) /Fo $@ $<
+
+{$(SRCDIR)}.c{$(WIN32_OBJDIR)}.obj:
+    $(CC_CMD) $(CC_CFLAGS) $(WIN32_CFLAGS) /Fo$@ /Fd$(@D)\ /c $<
+
+{$(SRCDIR)}.cpp{$(WIN32_OBJDIR)}.obj:
+    $(CC_CMD) $(CC_CFLAGS) $(WIN32_CFLAGS) /Fo$@ /Fd$(@D)\ /c $<
+
+# ------------------------------------------------------------- #
+# ------------------------------------------------------------- #
+# Default target when no CFG library type has been specified,   #
+# results in building target ALL for all c-ares library types.  #
+# ------------------------------------------------------------- #
+# ------------------------------------------------------------- #
+
+!IF "$(VALID_CFGSET)" == "FALSE"
+
+ALL:
+    $(MAKE) /f .\Makefile.msvc  CFG=lib-release  ALL
+    $(MAKE) /f .\Makefile.msvc  CFG=lib-debug    ALL
+    $(MAKE) /f .\Makefile.msvc  CFG=dll-release  ALL
+    $(MAKE) /f .\Makefile.msvc  CFG=dll-debug    ALL
+
+clean:
+    @-RMDIR /S /Q $(BASE_DIR) >NUL 2>&1
+
+install:
+    @$(MAKE) /nologo /f .\Makefile.msvc  CFG=lib-release  install
+    @$(MAKE) /nologo /f .\Makefile.msvc  CFG=lib-debug    install
+    @$(MAKE) /nologo /f .\Makefile.msvc  CFG=dll-release  install
+    @$(MAKE) /nologo /f .\Makefile.msvc  CFG=dll-debug    install
+
+!ENDIF
+
+# ---------------------------------------------------------------------
+# Targets only available when a proper CFG library type has been given
+# ---------------------------------------------------------------------
+
+!IF "$(VALID_CFGSET)" == "TRUE"
+
+ALL: win32
+    @
+
+win32: $(HHEADERS) $(CSOURCES) $(WIN32_OBJDIR) $(WIN32_OBJS) $(WIN32_OUTDIR)
+    $(WIN32_LINK) $(WIN32_LFLAGS) /out:$(WIN32_OUTDIR)\$(WIN32_TARGET) $(WIN32_OBJS)
+!   IF "$(USE_RES_FILE)" == "TRUE"
+    @if exist $(WIN32_OUTDIR)\$(WIN32_TARGET).manifest mt -nologo -manifest $(WIN32_OUTDIR)\$(WIN32_TARGET).manifest -outputresource:$(WIN32_OUTDIR)\$(WIN32_TARGET);2
+!   ENDIF
+
+
+$(WIN32_OUTDIR): $(WIN32_DIR)
+    @if not exist $(WIN32_OUTDIR) mkdir $(WIN32_OUTDIR)
+
+
+
+$(WIN32_OBJDIR): $(WIN32_OUTDIR)
+    @if not exist $(WIN32_OBJDIR) mkdir $(WIN32_OBJDIR)
+
+
+clean:
+    @-RMDIR /S /Q $(WIN32_OUTDIR) >NUL 2>&1
+
+install:
+    @if not exist $(WIN32_OUTDIR)\$(WIN32_TARGET) \
+        $(MAKE) /f .\Makefile.msvc CFG=$(CFG) c-ares
+    @if not exist "$(INSTALL_DIR)"     mkdir "$(INSTALL_DIR)"
+    @if not exist "$(INSTALL_DIR_LIB)" mkdir "$(INSTALL_DIR_LIB)"
+    @if not exist "$(INSTALL_DIR_INC)" mkdir "$(INSTALL_DIR_INC)"
+    @copy /y $(WIN32_OUTDIR)\*.*      "$(INSTALL_DIR_LIB)" >NUL
+    @copy /y $(SRCDIR)\ares.h         "$(INSTALL_DIR_INC)" >NUL
+    @copy /y $(SRCDIR)\ares_build.h   "$(INSTALL_DIR_INC)" >NUL
+    @copy /y $(SRCDIR)\ares_rules.h   "$(INSTALL_DIR_INC)" >NUL
+    @copy /y $(SRCDIR)\ares_version.h "$(INSTALL_DIR_INC)" >NUL
+    @echo Installed c-ares $(CFG)
+
+!ENDIF
+
+$(BASE_DIR):
+    @if not exist $(BASE_DIR) mkdir $(BASE_DIR)
+
+$(WIN32_DIR): $(BASE_DIR)
+    @if not exist $(WIN32_DIR) mkdir $(WIN32_DIR)
+
+
+# End of Makefile.msvc

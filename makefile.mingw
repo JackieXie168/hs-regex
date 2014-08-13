@@ -1,0 +1,97 @@
+# GNU MAKE Makefile for regex library - WIN32 MinGW GCC
+#
+# Usage: make -f [path\]mingwin32.mak [DEBUG=Y] [DLL=Y] [WIDE=Y] [UTF8=Y] [tgt]
+#
+# where tgt can be any of:
+# [all|demos|pdcurses.a|testcurs.exe...]
+
+O = o
+ifeq (__$(DLL)__,____)
+DLL =Y
+endif
+ifndef REGEX_SRCDIR
+	REGEX_SRCDIR = .
+endif
+
+LIBOBJS=	$(REGEX_SRCDIR)/regcomp.o \
+		$(REGEX_SRCDIR)/regerror.o \
+		$(REGEX_SRCDIR)/regexec.o \
+		$(REGEX_SRCDIR)/regfree.o
+
+
+CC		= gcc
+
+ifeq ($(DEBUG),Y)
+	CFLAGS  = -g -Wall -DPDCDEBUG
+	LDFLAGS = -g
+else
+	CFLAGS  = -O2 -Wall
+	LDFLAGS =
+endif
+
+CFLAGS += -I$(REGEX_SRCDIR)
+
+REGEXDEF		= regex.def
+#WIDEDEF		= $(REGEX_SRCDIR)\exp-wide.def
+
+DEFDEPS		= $(REGEXDEF)
+
+
+DEFFILE		= $(REGEXDEF)
+
+LINK		= gcc
+
+ifeq ($(DLL),Y)
+	CFLAGS += -DREGEX_DLL_BUILD
+	LIBEXE = gcc $(DEFFILE)
+	LIBFLAGS = -Wl,--out-implib,libregex.dll.a -shared -o
+	LIBREGEX = libregex.dll
+	LIBDEPS = $(LIBOBJS) $(PDCOBJS) $(DEFFILE)
+	CLEAN = $(LIBREGEX) *.a $(DEFFILE)
+else
+	LIBEXE = ar
+	LIBFLAGS = rcv
+	LIBREGEX = libregex.a
+	LIBDEPS = $(LIBOBJS) $(PDCOBJS)
+	CLEAN = *.a
+endif
+
+.PHONY: all libs clean demos dist
+
+all:	libs
+
+libs:	$(LIBREGEX)
+
+clean:
+	-del *.o
+	-del *.exe
+	-del $(CLEAN)
+
+demos:	$(DEMOS)
+	strip *.exe
+
+$(DEFFILE): $(DEFDEPS)
+	#echo LIBRARY libregex > $@
+	#echo EXPORTS >> $@
+	#type $(BASEDEF) >> $@
+ifeq ($(WIDE),Y)
+	type $(WIDEDEF) >> $@
+endif
+
+$(LIBREGEX) : $(LIBDEPS)
+	$(LIBEXE) $(LIBFLAGS) $@ $?
+	
+	
+
+$(LIBOBJS) $(PDCOBJS) : $(REGEX_HEADERS)
+$(PDCOBJS) : $(REGEX_WIN_H)
+
+$(LIBOBJS) : %.o: $(REGEX_SRCDIR)/%.c
+	$(CC) -c $(CFLAGS) $<
+
+
+PLATFORM1 = MinGW Win32
+PLATFORM2 = MinGW for Win32
+ARCNAME = regexex$(VER)_ming_w32
+
+

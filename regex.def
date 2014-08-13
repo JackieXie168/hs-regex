@@ -1,0 +1,6 @@
+LIBRARY RegexDLL
+EXPORTS
+regcomp
+regerror
+regexec
+regfree
