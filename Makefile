@@ -1,130 +1,111 @@
-# You probably want to take -DREDEBUG out of CFLAGS, and put something like
-# -O in, *after* testing (-DREDEBUG strengthens testing by enabling a lot of
-# internal assertion checking and some debugging facilities).
-# Put -Dconst= in for a pre-ANSI compiler.
-# Do not take -DPOSIX_MISTAKE out.
-# REGCFLAGS isn't important to you (it's for my use in some special contexts).
-CFLAGS=-I. -DPOSIX_MISTAKE -DREDEBUG $(REGCFLAGS)
+# Things you might want to put in ENV:
+# -DERRAVAIL		have utzoo-compatible error() function and friends
+ENV=
 
-# If you have a pre-ANSI compiler, put -o into MKHFLAGS.  If you want
-# the Berkeley __P macro, put -b in.
-MKHFLAGS=
+# Things you might want to put in TEST:
+# -DDEBUG		debugging hooks
+# -I.			regexp.h from current directory, not /usr/include
+TEST=-I.
 
-# Flags for linking but not compiling, if any.
-LDFLAGS=
+# Things you might want to put in PROF:
+# -pg			profiler
+PROF=
 
-# Extra libraries for linking, if any.
-LIBS=
+CFLAGS=-O $(ENV) $(TEST) $(PROF)
+LDFLAGS=$(PROF)
 
-# Internal stuff, should not need changing.
-OBJPRODN=regcomp.o regexec.o regerror.o regfree.o
-OBJS=$(OBJPRODN) split.o debug.o main.o
-H=cclass.h cname.h regex2.h utils.h
-REGSRC=regcomp.c regerror.c regexec.c regfree.c
-ALLSRC=$(REGSRC) engine.c debug.c main.c split.c
-
-# Stuff that matters only if you're trying to lint the package.
-LINTFLAGS=-I. -Dstatic= -Dconst= -DREDEBUG
-LINTC=regcomp.c regexec.c regerror.c regfree.c debug.c main.c
-JUNKLINT=possible pointer alignment|null effect
-
-# arrangements to build forward-reference header files
-.SUFFIXES:	.ih .h
-.c.ih:
-	sh ./mkh $(MKHFLAGS) -p $< >$@
+LIB=libregexp.a
+OBJ=regexp.o regsub.o regerror.o
+TMP=dtr.tmp
 
 default:	r
 
-lib:	purge $(OBJPRODN)
-	rm -f libregex.a
-	ar crv libregex.a $(OBJPRODN)
+try:	try.o $(LIB)
+	cc $(LDFLAGS) try.o $(LIB) -o try
 
-purge:
-	rm -f *.o
+# Making timer will probably require putting stuff in $(PROF) and then
+# recompiling everything; the following is just the final stage.
+timer:	timer.o $(LIB)
+	cc $(LDFLAGS) timer.o $(LIB) -o timer
 
-# stuff to build regex.h
-REGEXH=regex.h
-REGEXHSRC=regex2.h $(REGSRC)
-$(REGEXH):	$(REGEXHSRC) mkh
-	sh ./mkh $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) >regex.tmp
-	cmp -s regex.tmp regex.h 2>/dev/null || cp regex.tmp regex.h
-	rm -f regex.tmp
+timer.o:	timer.c timer.t.h
 
-# dependencies
-$(OBJPRODN) debug.o:	utils.h regex.h regex2.h
-regcomp.o:	cclass.h cname.h regcomp.ih
-regexec.o:	engine.c engine.ih
-regerror.o:	regerror.ih
-debug.o:	debug.ih
-main.o:	main.ih
+timer.t.h:	tests
+	sed 's/	/","/g;s/\\/&&/g;s/.*/{"&"},/' tests >timer.t.h
 
-# tester
-re:	$(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+# Regression test.
+r:	try tests
+	./try <tests		# no news is good news...
 
-# regression test
-r:	re tests
-	./re <tests
-	./re -el <tests
-	./re -er <tests
+$(LIB):	$(OBJ)
+	ar cr $(LIB) $(OBJ)
 
-# 57 variants, and other stuff, for development use -- not useful to you
-ra:	./re tests
-	-./re <tests
-	-./re -el <tests
-	-./re -er <tests
+regexp.o:	regexp.c regexp.h regmagic.h
+regsub.o:	regsub.c regexp.h regmagic.h
 
-rx:	./re tests
-	./re -x <tests
-	./re -x -el <tests
-	./re -x -er <tests
+clean:
+	rm -f *.o core mon.out gmon.out timer.t.h copy try timer r.*
+	rm -f residue rs.* re.1 rm.h re.h ch.soe ch.ps j badcom fig[012]
+	rm -f ch.sml fig[12].ps $(LIB)
+	rm -rf $(TMP) dtr.*
 
-t:	./re tests
-	-time ./re <tests
-	-time ./re -cs <tests
-	-time ./re -el <tests
-	-time ./re -cs -el <tests
+# the rest of this is unlikely to be of use to you
 
-l:	$(LINTC)
-	lint $(LINTFLAGS) -h $(LINTC) 2>&1 | egrep -v '$(JUNKLINT)' | tee lint
+BITS = r.1 rs.1 re.1 rm.h re.h
+OPT=-p -ms
 
-fullprint:
-	ti README WHATSNEW notes todo | list
-	ti *.h | list
-	list *.c
-	list regex.3 regex.7
+ch.soe:	ch $(BITS)
+	soelim ch >$@
 
-print:
-	ti README WHATSNEW notes todo | list
-	ti *.h | list
-	list reg*.c engine.c
+ch.sml:	ch $(BITS) smlize splitfigs
+	splitfigs ch | soelim | smlize >$@
 
+fig0 fig1 fig2:	ch splitfigs
+	splitfigs ch >/dev/null
 
-mf.tmp:	Makefile
-	sed '/^REGEXH=/s/=.*/=regex.h/' Makefile | sed '/#DEL$$/d' >$@
+f:	fig0 fig1 fig2 figs
+	groff -Tps -s $(OPT) figs | lpr
 
-DTRH=cclass.h cname.h regex2.h utils.h
-PRE=COPYRIGHT README WHATSNEW
-POST=mkh regex.3 regex.7 tests $(DTRH) $(ALLSRC) fake/*.[ch]
-FILES=$(PRE) Makefile $(POST)
-DTR=$(PRE) Makefile=mf.tmp $(POST)
-dtr:	$(FILES) mf.tmp
-	makedtr $(DTR) >$@
-	rm mf.tmp
+fig1.ps:	fig0 fig1
+	( cat fig0 ; echo ".LP" ; cat fig1 ) | groff -Tps $(OPT) >$@
 
-cio:	$(FILES)
-	cio $(FILES)
+fig2.ps:	fig0 fig2
+	( cat fig0 ; echo ".LP" ; cat fig2 ) | groff -Tps $(OPT) >$@
 
-rdf:	$(FILES)
-	rcsdiff -c $(FILES) 2>&1 | p
+fp:	fig1.ps fig2.ps
 
-# various forms of cleanup
-tidy:
-	rm -f junk* core core.* *.core dtr *.tmp lint
+r.1:	regexp.c splitter
+	splitter regexp.c
 
-clean:	tidy
-	rm -f *.o *.s *.ih re libregex.a
+rs.1:	regsub.c splitter
+	splitter regsub.c
 
-# don't do this one unless you know what you're doing
-spotless:	clean
-	rm -f mkh regex.h
+re.1:	regerror.c splitter
+	splitter regerror.c
+
+rm.h:	regmagic.h splitter
+	splitter regmagic.h
+
+re.h:	regexp.h splitter
+	splitter regexp.h
+
+PLAIN=COPYRIGHT README Makefile regexp.3 try.c timer.c tests
+FIX=regexp.h regexp.c regsub.c regerror.c regmagic.h
+DTR=$(PLAIN) $(FIX)
+
+dtr:	r $(DTR)
+	rm -rf $(TMP)
+	mkdir $(TMP)
+	cp $(PLAIN) $(TMP)
+	for f in $(FIX) ; do normalize $$f >$(TMP)/$$f ; done
+	( cd $(TMP) ; makedtr $(DTR) ) >bookregexp.shar
+	( cd $(TMP) ; tar -cvf ../bookregexp.tar $(DTR) )
+	rm -rf $(TMP)
+
+ch.ps:	ch Makefile $(BITS)
+	groff -Tps $(OPT) ch >$@
+
+copy:	ch.soe ch.sml fp
+	makedtr REMARKS ch.sml fig*.ps ch.soe >$@
+
+go:	copy dtr

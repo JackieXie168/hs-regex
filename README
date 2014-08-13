@@ -1,32 +1,60 @@
-alpha3.8 release.
-Tue Aug 10 15:51:48 EDT 1999
-henry@spsystems.net  (formerly henry@zoo.toronto.edu)
+This is a revision of my well-known regular-expression package, regexp(3).
+It gives C programs the ability to use egrep-style regular expressions, and
+does it in a much cleaner fashion than the analogous routines in SysV.
+It is not, alas, fully POSIX.2-compliant; that is hard.  (I'm working on
+a full reimplementation that will do that.)
 
-See WHATSNEW for change listing.
+This version is the one which is examined and explained in one chapter of
+"Software Solutions in C" (Dale Schumacher, ed.; AP Professional 1994;
+ISBN 0-12-632360-7), plus a couple of insignificant updates, plus one
+significant bug fix (done 10 Nov 1995).
 
-installation notes:
---------
-Read the comments at the beginning of Makefile before running.
+Although this package was inspired by the Bell V8 regexp(3), this
+implementation is *NOT* AT&T/Bell code, and is not derived from licensed
+software.  Even though U of T is a V8 licensee.  This software is based on
+a V8 manual page sent to me by Dennis Ritchie (the manual page enclosed
+here is a complete rewrite and hence is not covered by AT&T copyright).
+I admit to some familiarity with regular-expression implementations of
+the past, but the only one that this code traces any ancestry to is the
+one published in Kernighan & Plauger's "Software Tools" (from which
+this one draws ideas but not code).
 
-Utils.h contains some things that just might have to be modified on
-some systems, as well as a nested include (ugh) of <assert.h>.
+Simplistically:  put this stuff into a source directory, inspect Makefile
+for compilation options that need changing to suit your local environment,
+and then do "make".  This compiles the regexp(3) functions, builds a
+library containing them, compiles a test program, and runs a large set of
+regression tests.  If there are no complaints, then put regexp.h into
+/usr/include, add regexp.o, regsub.o, and regerror.o into your C library
+(or put libre.a into /usr/lib), and install regexp.3 (perhaps with slight
+modifications) in your manual-pages directory. 
 
-The "fake" directory contains quick-and-dirty fakes for some header
-files and routines that old systems may not have.  Note also that
--DUSEBCOPY will make utils.h substitute bcopy() for memmove().
+The files are:
 
-After that, "make r" will build regcomp.o, regexec.o, regfree.o,
-and regerror.o (the actual routines), bundle them together into a test
-program, and run regression tests on them.  No output is good output.
+COPYRIGHT	copyright notice
+README		this text
+Makefile	instructions to make everything
+regexp.3	manual page
+regexp.h	header file, for /usr/include
+regexp.c	source for regcomp() and regexec()
+regsub.c	source for regsub()
+regerror.c	source for default regerror()
+regmagic.h	internal header file
+try.c		source for test program
+timer.c		source for timing program
+tests		test list for try and timer
 
-"make lib" builds just the .o files for the actual routines (when
-you're happy with testing and have adjusted CFLAGS for production),
-and puts them together into libregex.a.  You can pick up either the
-library or *.o ("make lib" makes sure there are no other .o files left
-around to confuse things).
+This implementation uses nondeterministic automata rather than the
+deterministic ones found in some other implementations, which makes it
+simpler, smaller, and faster at compiling regular expressions, but slower
+at executing them.  Many users have found the speed perfectly adequate,
+although replacing the insides of egrep with this code would be a mistake.
 
-Main.c, debug.c, split.c are used for regression testing but are not part
-of the RE routines themselves.
+This stuff should be pretty portable, given an ANSI C compiler and
+appropriate option settings.  There are no "reserved" char values except for
+NUL, and no special significance is attached to the top bit of chars.
+The string(3) functions are used a fair bit, on the grounds that they are
+probably faster than coding the operations in line.  Some attempts at code
+tuning have been made, but this is invariably a bit machine-specific.
 
-Regex.h goes in /usr/include.  All other .h files are internal only.
---------
+This distribution lives at ftp://ftp.zoo.toronto.edu/pub/bookregexp.{tar|shar}
+at present.
