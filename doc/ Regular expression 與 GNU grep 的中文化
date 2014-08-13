@@ -1,0 +1,325 @@
+《專題報導》
+
+  Regular expression 與 GNU grep 的中文化
+
+              (作者　邱展毅)
+
+      一、前言
+
+      打開電視、收音機、報章雜誌，細心的你也許已發覺到資訊量正
+    快速的成長中。若你連上網際網路(Internet)，相信  News、BBS、
+    Gopher、WWW(Word  Wide Web)的資訊量更會使你看的目不暇給。聰
+    明的你會如何運用這些資訊呢？或者已被這龐大的資訊巨獸逼迫的
+    不知所措？
+
+      對生活在資訊高度膨脹環境下的現代人而言，擁有好的檢索工具
+    ，以過濾出真正有用的資訊，的確是一件不可或缺的事！本文將介
+    紹在UNIX上常用的一個檢索工具---grep，並說明以GNU grep為基礎
+    ，所完成可處理「中文regular expression」的工具---cgrep。
+
+      二、Regular expression
+
+      Regular  expression可分為  Standard regular expression 及
+    Extended  regular expression，前者之組成元素為：普通字元、^
+    、、〔...〕、．、＊、－、〔^...〕、掤、痎、、m,n；後者除了
+    前者之組成元素外，增加了四個運算子：＋、？、（...）及｜。
+    regular  repression是一種很值得推崇的字串表達方式，可以簡化
+    許多複雜的字串處理工作，提昇工作效率。然而本文的重點並不是
+    介紹它的使用方法，故僅列舉幾個實例於【表一】以供參考。有興
+    趣的讀者可參考本通訊第十一卷05、06兩期之「Regular
+    Expression簡介」一文或UNIX指令Sed、egrep之man page。
+
+      表一  regular expression使用實例
+┌─────────────────────────────┐
+│1、"[Tt]here"表示字串"There"或"there"。                   					│
+│2、"tr.*al"表示以"tr"開始，"al"結束的所有字串。           				│
+│3、"[a-zA-Z]\{0,20\}"表示由0-20個英文字母(不分大小寫)所組 		│
+│    成的字串。                                            								│
+│4、"[Tt]here｜tr.*al｜[a-zA-Z]\{0,20\}表示滿足上述1、2或3 		│
+│     之所有字串。                                         							│
+└─────────────────────────────┘
+
+      UNIX上有許多已被廣泛使用的工具，諸如   grep、egrep、awk、
+    sed、vi、emacs...等，這些工具皆可使用regular expression來指
+    定欲找尋的字串，並可結合各工具的其他功能，對找到的資料做進
+    一步的處理，使得它們成為功能強大且受歡迎的工具。
+
+      不過令人感到遺憾的是這些好用的工具所支援的regular
+    expression，到目前為止僅可處理ASCII字元(註一)所組成的
+    regular expression，如【表一】所列出的例子。對於 Big5中文碼
+    的處理，常有預期之外的結果產生，使得使用者無法完全信任這些
+    工具，而必須多做一些檢驗的動作，造成使用上的不便及時間的浪
+    費！【表二】說明造成這種情況的原因。
+
+      表二  regular expression與Big5中文字
+┌──────────────────────────────────────┐
+│1.Big5中文碼(2bytes   code)之組成形式如下圖所示：                         					 	│
+│                ┌───────┬───────┐                        						 	│
+│                │  High Byte   	│  Low Byte    	│                        						 	│
+│                ├───────┼───────┤                        						 	│
+│                │  0xA1-0xFE   │  0x40-0x7E    │                        						 	│
+│                │              			│     or       		 │                        						 	│
+│                │              			│  0xA1-0xFE   │                        						 	│
+│                └───────┴───────┘                        						 	│
+│2.由上圖可看出Big5中文字之 high byte及low byte有重複部分（0xA1-0xFE）。若  	│
+│  中文字之high byte及low byte皆落在 0xA1-0xFE 這個範圍內，則可能產生第一個  	│
+│  中文字的low byte與第二個中文字的high byte所組成的字仍是一個合法中文字的     	│
+│  情形，這就是造成混淆的原因之一。例如：資、料、網、不、中、之、互、仍、今  	│
+│　、內、分、及、天、太、少、手、全、文、方、日、月、它、必、用、民...，這     	│
+│　些常用到的字都是會產生混淆的字。                                        						 	│
+│                                                                          												│
+│3.會產生混淆的字共有8050個(Big5 A4A1-F9DC)，若包括全形符號及造字區，則不只│
+│  這些。                                                                  												│
+│                                                                          												│
+│4.Regular expression所構成的樣式(pattern)若含有運算子'．'、'＊'、\{m,n\}、				│
+│ 〔...〕，當與中文字做比對時，可能會將中文字截一半。例如：pattern="資．"  			│
+│  並不會找到"資訊"，只找到"資"及"訊"的high byte。                         							│
+│                                                                          												│
+│5.Regular expression之character class運算子〔...〕內部只能辨識1byte字元(a 				│
+│  、z、3...)，無法辨識2bytes字元(Big5中文碼)。例如：pattern="資〔訊料〕"無				│
+│  法正確比對"資訊"或"資料"等字串。                                        								│
+└──────────────────────────────────────┘
+
+      假若我們能解決【表二】所列出的問題，對  Big5 中文環境的使
+    用者而言，相信會是一個很好的消息！基於這個理念，我們首先完
+    成了GNU  grep的中文化，解決了上述問題，為各位呈獻一個支援全
+    中文regular expression的好工具。
+
+      三、GNU grep的中文化
+
+      傳統UNIX指令中，  grep家族---grep、egrep、fgrep(註二)是一
+    組非常好用而且使用頻率相當高的檢索工具。藉由它們，可以從一
+    群資料檔中過濾出我們想要的資料，進而提供我們有用的資訊。不
+    過若將其應用於檢索中文資料，可能常有受騙的感覺！底下說明中
+    文化的動機與過程：
+
+      1.中文化動機---從資料檔(test.doc)中檢索資料
+       ┌──────────────────────────┐
+       │ 蒐集相關資料。                                   						 │
+       │ 以正確的資訊做判斷。                             						 │
+       │ 全文檢索滿足您的需要。                           					 │
+       │ 之乎者也成功的中文化。                           					 │
+       │ 在瀏灠畫面中即無法顯示出來。                     				 │
+       │ 擁有全文檢索系統使您的工作更加有效率。           			 │
+       │ This is the hour Madam Entreated me to call her. 				 │
+       └──────────────────────────┘
+
+      例一、執行 egrep "的｜之" test.doc，結果如下：
+      ┌───────────────────┐
+      │以正確的資訊做判斷。                  			│
+      │      --                              						│
+      │全文檢索滿足您的需要。                			│
+      │              --                      						│
+      │之乎者也成功的中文化。                			│
+      │在瀏灠畫面中即無法顯示出來。          		│
+      │          ----                        						│
+      │擁有全文檢索系統使您的工作更加有效率。	│
+      │                    --                						│
+      └───────────────────┘
+
+      檢索結果的第四列並沒有'的'或'之'兩個字，為何該列會被選出
+    來呢？原因是Big5碼'中'(內碼A4A4)的low  byte與'即'(內碼A759)
+    的high  byte 恰巧合成'之'(內碼A4A7)這個字，因而產生誤判的情
+    形。
+
+      例二、執行 grep ``[站立]'' test.doc，結果如下：
+      ┌────────────────────┐
+      │蒐集相關資料。                      					  │
+      │以正確的資訊做判斷。                  			  │
+      │全文檢索滿足您的需要。                			  │
+      │之乎者也成功的中文化。                			  │
+      │在瀏灠畫面中即無法顯示出來。          		  │
+      │擁有全文檢索系統使您的工作更加有效率。   │
+      └────────────────────┘
+
+      可以很清楚的看出test.doc內並不含'站'或'立'這兩個字，但卻
+    選出了六列資料。若資料量很大，要想去除這種中文字誤判的情形
+    ，可真是一件惱人的工作！
+
+      2.中文化的過程
+
+      GNU  grep有完整的原始程式碼，並且在「GNU  General  Public
+    License」的規範下，任何人皆可以自由的擁有、修改及傳播它。這
+    對於想要擁有一個好的中文化工具的我們，的確是一個好消息！
+
+      GNU  grep具備傳統UNIX指令grep家族之功能，且幾乎完全相容。
+    其與grep家族之對應如【表三】所示：
+
+      表三  GNU grep 與 UNIX grep家族
+     ┌─────┬───────┬───────────┐
+     │GNU grep	│UNIX grep家族│regular expression    		│
+     ├─────┼───────┼───────────┤
+     │grep(-G)		│grep　　　　　│standard regular exp. 		│
+     ├─────┼───────┼───────────┤
+     │grep -E     │egrep　　     	│extended regular exp. 		│
+     ├─────┼───────┼───────────┤
+     │grep -F 	   │fgrep　　 　　	│不支援 regular exp.   		│
+     └─────┴───────┴───────────┘
+
+      GNU grep 使用三種字串搜尋方法(matcher)，分別為KWS matcher
+    、DFA  matcher及regex matcher。對於完整字串(註三)所構成的樣
+    式(pattern)，使用KWS matcher 即可完成檢索的工作。而 Regular
+    expression 所構成的樣式，若不含Back-reference 運算子(，-)，
+    使用KWS     matcher及DFA    matcher即可完成檢索工作；若含有
+    Back-reference運算子，則須再使用regex matcher方可完成檢索的
+    工作。【表四】列出GNU grep使用各matcher的情形。
+
+      表四  GNU grep使用的檢索方法
+      ┌─────┬───────────────┐
+      │GNU grep  │ 檢索方法               					  │
+      ├─────┼───────────────┤
+      │grep(-G)  	 │ KWS、DFA、Regex matcher	  │
+      ├─────┼───────────────┤
+      │grep -E   	 │ KWS、DFA、Regex matcher	  │
+      ├─────┼───────────────┤
+      │grep -F   	 │KWS matcher             				  │
+      └─────┴───────────────┘
+
+      由於regex  matcher的檢索速度很慢，且DFA matcher已含蓋 KWS
+    matcher的檢索功能，故我們只針對  DFA matcher進行中文化(不考
+    慮Back-reference運算子)。DFA          matcher的理論架構即是
+    Compilers      書上所提的「確定性有限自動機」(Deterministic
+    Finite Automata)，該方法效率佳，但須耗用較多的記憶空間。
+
+      GNU   grep的原始程式使用bit   map  的方式來建立狀態移轉表
+    (transition  table)，這對處理1byte字元(0-255)是一個效率很好
+    的方法。不過若用這個方法為數量龐大的中文字(Big5      2bytes
+    code)建立狀態移轉表，大量的記憶空間需求，並不是一般電腦所能
+    負荷的。因此我們以集合的觀念(交集、餘集、差集、...)改寫bit
+    map的方法，使得記憶空間維持在可接受的狀況。當然效率與空間是
+    一個很難取捨的問題，新的方法執行速度雖然比不上原來的方法，
+    但仍不致於太差。
+
+      要能做到徹底的中文化，中文字與其它字元(例如：ascii或
+    0-255)都必須以一個完整字元的觀念來處理，而不是將Big5中文碼
+    拆成二個ascii  code分別處理。這一點在對 GNU grep 進行中文化
+    的過程皆已考慮到，也因此 regular expression中的'．'可以代表
+    一個英文字或一個Big5中文字；'資〔訊料源〕'可以找到「資訊」
+    、「資料」或「資源」等詞，不再有受騙的恐懼了。
+
+
+      四、效能測試
+
+      要知道一個工具的性能好壞，一份完整的測試報告是最具說服力
+    的。以下就是我們對中文化的  GNU grep所做的效能測試(測試環境
+    為SUN  SPARCCenter 2000上執行SunOS 5.4)，並與未中文化的 GNU
+    grep及  UNIX 上的 egrep 作一比較。(中文化後的GNU grep我們以
+    cgrep來命名)。
+
+      表五  測試時所使用的樣式(pattern)
+┌───┬────────────────────────────────┐
+│      	  │       pattern(s)                                              								  #│
+├───┼────────────────────────────────┤
+│pat. 1  │       window                                                  								  1│
+├───┼────────────────────────────────┤
+│pat. 2  │window|\<the\>|pat.*n|disk|easy                                						  5│
+├───┼────────────────────────────────┤
+│pat. 3 │window|\<the\>|pat.*n|disk|easy|grand|happy|mouth|noun|open   				10│
+├───┼────────────────────────────────┤
+│pat. 4  │window|\<the\>|pat.*n|disk|easy|grand|happy|mouth|noun|open|    				 │
+│         │quit|quiz|rich|string|teach|limit|vesa|wear|xray|year         							20│
+├───┼────────────────────────────────┤
+│pat. 5 │window|\<the\>|pat.*n|disk|easy|grand|happy|mouth|noun|open|    				 │
+│      	  │quit|quiz|rich|string|teach|limit|vesa|wear|xray|year|zone|     							 │
+│      	  │zoo|bolck|blank|people                                        								25│
+├───┼────────────────────────────────┤
+│pat. 6	│window|\<the\>|pat.*n|disk|easy|grand|happy|mouth|noun|open|    				 │
+│      		│quit|quiz|rich|string|teach|limit|vesa|wear|xray|year|zone|     						 │
+│      		│zoo|bolck|blank|people|monney|splin|shift|pause|scroll|         						 │
+│      		│enter|custom|friend|share|close|match|philo|phy|compact|        					 │
+│      		│stock|head|trail|hair|eye                                     								60│
+└───┴────────────────────────────────┘
+
+      【表五】為測試時所使用的樣式(pat.1-6)，其中第三欄(＃)內的
+    數字表示該樣式是由幾個子樣式(subpattern)所組成。【表六】內
+    之數字為程式執行時所花費的實際時間(real time；單位：秒)。若
+    將測試結果以曲線圖表示，可以更清楚的看出 egrep、 grep -E 及
+    cgrep -E之執行效率。如【圖一】所示，可以很清楚的看出，egrep
+    之時間曲線幾乎為指數成長，而grep  -E與cgrep -E 則為線性成長
+    ，且曲線有漸趨平緩的傾向。
+
+      表六  egrep、grep -E、cgrep -E 測試結果
+    ┌────┬───┬───┬───┬───┬───┬───┐
+    │＃---＞ │pat. 1│pat. 2│pat. 3│pat. 4│pat. 5│pat.6 │
+    ├────┼───┼───┼───┼───┼───┼───┤
+    │        │  1   │ 5    │ 10   │ 20   │ 25   │  60  │
+    ├────┼───┼───┼───┼───┼───┼───┤
+    │egrep   │  4.4 │ 4.6  │  5.0 │ 22.2 │ 39.8 │ 467.7│
+    ├────┼───┼───┼───┼───┼───┼───┤
+    │grep  -E│  0.6 │ 3.0  │  3.0 │  3.3 │  3.7 │   7.9│
+    ├────┼───┼───┼───┼───┼───┼───┤
+    │cgrep -E│  9.7 │10.0  │ 15.0 │ 17.0 │ 18.2 │  20.9│
+    └────┴───┴───┴───┴───┴───┴───┘
+
+      圖一  egrep、grep -E、cgrep -E之曲線圖
+
+
+      五、結語
+
+      由計算中心開發完成的「中文全文檢索資料庫」目前已有文字版
+    及WWW(Word  Wide Web)版本，使用者已遍及世界各學術領域。為了
+    讓使用者能更靈活的使用這個資料庫，我們已著手進行加入
+    wildcard字元（＊、？）的檢索功能到這個資料庫內。
+
+      檢索時，要完成單一樣式(pattern)結合  wildcard字元的檢索功
+    能可以輕易的做到，不過結合多個樣式(multipattern)與 wildcard
+    字元的檢索功能，若要維持高效率的檢索能力，仍得多下點功夫。
+
+      欲達到多個樣式(multipattern)與   wildcard字元的檢索功能，
+    regular  expression是直覺可以運用的好方法，它在 UNIX 上已被
+    廣泛運用(例如：grep、egrep、awk、sed、vi、emacs，...)，並且
+    可能已有完整的C Library可供使用(註四)。
+
+      我們查閱許多演算法相關書籍，並希望能找到UNIX上結合
+    multipattern與regular  expression的檢索工具---egrep所使用的
+    演算法。在這個過程中測試了egrep、agrep(註五)及GNU  grep的功
+    能與執行效率，並閱讀 agrep 及GNU grep的部份程式碼。評估後，
+    由於GNU      grep有完整的程式，並已支援extended     regular
+    expression(．、＊、｜、...)，故選定GNU      grep有關regular
+    expression之相關程式作深入瞭解，進而完成DFA  module之中文化
+    ，這就是cgrep中文化的由來。
+
+      cgrep是在強化「中文全文檢索資料庫」功能的途中，所獲得的附
+    加成果，相信對許多人的工作會有所幫助，因此先提出來與各位分
+    享！不過，截至目前為止，要完成 wildcard 字元與 multipattern
+    的全文檢索功能，仍有許多技術上的瓶頸等待突破，期待能早日提
+    供各位一個更完整的「中文全文檢索資料庫」。
+
+      註
+
+      目前支援   regular  expression的工具，通常只處理ASCII字元
+    (0-127)組成的   regular  expression，頂多也只擴充到處理字元
+    0-255(即8bits字元，或稱1byte字元)。至於中文字的處理，有些工
+    具並不支援，或者只支援由  EUC(Extended UNIX Code)構成的中文
+    字。對於使用最廣泛的Big5中文碼---  2bytes字元，現有工具上之
+    regular expression並無法正確的表示。
+
+      理想上應該只有一個grep指令，而非grep家族(grep、egrep、
+    fgrep)，以減少使用者因記憶太多指令而造成混淆或誤用的情況。
+    然而權衡效率與記憶空間使用的情形，要找到一個既節省空間且有
+    效率的演算法，實在不是一件容易辦到的事。grep家族即是使用不
+    同的演算法(DFA、NFA、...)分別完成，以確保其能有較佳的執行表
+    現。
+
+      完整字串是由不含'＊'運算子的regular  expression所構成。以
+    實例來說明完整字串的含義：字串``happy''、``the｜之｜
+    people''皆為完整字串所構成的樣式(pattern)；而字串``hapy''、
+    ``[Tt]he｜peoe｜〔之的〕''則不是由完整字串所構成的樣式。
+
+      UNIX  C 上有幾組處理regular expression的 library function
+    ，例如：【compile()，step()】、【recomp()，reexec()】。經研
+    讀其man  page  及實際測試後，發現它們只支援standard regular
+    expression而不支援extended regular expression，故無法運用於
+    muliti-pattern之檢索需求。
+
+      agrep為中正大學吳昇(Sun Wu)老師的作品。它除了擁有 grep 的
+    功能外，並提供許多新的功能，例如：容錯搜尋及樣式間的邏輯運
+    算(AND、OR)，不過仍有許多使用上的限制。另外，吳老師有一項新
+    作品GAIS(Global Area Information Servers)，是一個多用途的資
+    訊搜尋系統，有興趣的讀者可以使用WWW             Browser連至
+    http://gais.cs.ccu.edu.tw，以獲得更詳細的訊息。
+
+      (在進行 GNU grep 中文化的過程中，感謝工作站袁天竑、陳弘哲
+    兩位同仁熱心協助，提供最新的程式(source code)及技術手冊，同
+    時，更感謝林晰先生細心的指導，使得本文得順利完成)。
+
