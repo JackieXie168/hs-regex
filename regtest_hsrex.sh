@@ -13,9 +13,9 @@
 #
 H=$HOME
 me=`basename $0`
-rgsrc=regtest_hsrex.c
+rgsrc=src/regtest_hsrex.c
 rgbin=regtest_hsrex
-datsrc=regtest_data.c
+datsrc=src/regtest_data.c
 datbin=regtest_data
 CC=gcc
 
@@ -84,7 +84,7 @@ cat<<-EOF>$rgsrc
 		size_t	len;
 		s = xs = src;
 		len = 0;
-		while ( s = strstr(s, "\\\x") )
+		while ( (s = strstr(s, "\\\x")) )
 		{
 			int	cbin;
 			sscanf(&s[2], "%2x", &cbin);
@@ -107,7 +107,7 @@ cat<<-EOF>$rgsrc
 	#	endif
 		return len;
 	}
-	main(int argc, char *argv[])
+	int main(int argc, char *argv[])
 	{
 		chr		re[1024*4], dat[1024*8];
 		size_t		relen, datlen;
@@ -121,7 +121,7 @@ cat<<-EOF>$rgsrc
 		relen = hexescapes2bin(re, argv[2], sizeof(re)/sizeof(chr));
 		datlen = hexescapes2bin(dat, argv[3], sizeof(dat)/sizeof(chr));
 		cflags = REG_ADVANCED | (nmatch ? 0 : REG_NOSUB);
-		rc = re_comp(&cre, re, relen, cflags);
+		rc = re_comp(&cre, (const unsigned char *) re, relen, cflags);
 		if ( rc != REG_OKAY )
 		{
 			regerror(rc, &cre, buf, sizeof(buf));
@@ -131,12 +131,12 @@ cat<<-EOF>$rgsrc
 		if ( nmatch >= 0 && cre.re_nsub != nmatch )
 		{
 			fprintf(stderr,
-				"Mismatch on number of group patterns. ",
-				"Expected %d, compiled %d\n",
+				"Mismatch on number of group patterns. "
+				"Expected %d, compiled %zu\n",
 				nmatch, cre.re_nsub);
 			exit(1);
 		}
-		rc = re_exec(&cre, dat, datlen, NULL, 100, pmatch, 0);
+		rc = re_exec(&cre, (const unsigned char *) dat, datlen, NULL, 100, pmatch, 0);
 		if ( rc != REG_OKAY )
 		{
 			regerror(rc, &cre, buf, sizeof(buf));
@@ -151,7 +151,7 @@ cat<<-EOF>$rgsrc
 			for ( i=1; i<cre.re_nsub+1 && pmatch[i].rm_so>=0; i++ )
 				sprintf(&buf[strlen(buf)], "%s%.*s",
 					i>1 ? ":" : "",
-					pmatch[i].rm_eo-pmatch[i].rm_so,
+					(int) (pmatch[i].rm_eo-pmatch[i].rm_so),
 					argv[3]+pmatch[i].rm_so);
 			printf("%s\n", buf);
 		}
@@ -163,9 +163,9 @@ PATH=.:$PATH
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 export PATH LD_LIBRARY_PATH
 # Either this one
-$CC -I. -I$H/inc -L. -lhsrex -o $rgbin $rgsrc			# Test ascii ch
+#$CC -I. -I$H/inc -L. -lhsrex -o $rgbin $rgsrc			# Test ascii ch
 # Or this one
-#$CC -I. -I$H/inc -L. -lhswrex -DREGEX_WCHAR -o $rgbin $rgsrc	# Test wide ch
+$CC -I. -I$H/inc -L. -lhswrex -DREGEX_WCHAR -o $rgbin $rgsrc	# Test wide ch
 #-----------------------------------
 resp=`$rgbin 0 "clavo" "Pablito clavo un clavito" 2>&1`
 msg="Simple match"
@@ -215,14 +215,14 @@ cat<<-EOF>$datsrc
 	#ifdef WIN32
 	#	include <process.h>
 	#	define getpid	_getpid
-	#elif defined(unix) || defined(__unix__)
+	#elif defined(unix) || defined(__unix__) || 1
 	#	include <unistd.h>
 	#else
 	#	error unknown platform
 	#endif
 	char	nums[] = "0123456789";
 	char	alph[] = "abcdefghijklmnopqrstuvwxyz";
-	main(int argc, char *argv[])
+	int main(int argc, char *argv[])
 	{
 		char	dat[16], *arr;
 		int	arrsz, datsz, i;
@@ -311,4 +311,8 @@ test -z "$resp" && f_ok "$msg" || f_no "$msg" "$resp"
 resp=`$rgbin 1 "(?i)(clavo)" "Pablito ClAvO un clavito" 2>&1`
 msg="One group pattern with case-insensitive matching"
 test "$resp" = "ClAvO" && f_ok "$msg" || f_no "$msg" "$resp"
+#-----------------------------------
+resp=`$rgbin 1 "(?i)(\d+)" "numbers 1234 numbers" 2>&1`
+msg="Digit character class as in JavaScript"
+test "$resp" = "1234" && f_ok "$msg" || f_no "$msg" "$resp"
 #-----------------------------------
