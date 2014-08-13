@@ -1,3 +1,5 @@
+/* $Id: regfree.c,v 1.5 1998/12/28 09:44:02 sas Exp $ */
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,9 +10,9 @@
 
 /*
  - regfree - free everything
- = extern void regfree(regex_t *);
+ = API_EXPORT(void) regfree(regex_t *);
  */
-void
+API_EXPORT(void)
 regfree(preg)
 regex_t *preg;
 {

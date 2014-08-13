@@ -5,6 +5,8 @@
  * of code.
  */
 
+/* $Id: engine.c,v 1.6 1998/12/28 09:44:01 sas Exp $ */
+
 #ifdef SNAMES
 #define	matcher	smatcher
 #define	fast	sfast
@@ -71,12 +73,12 @@ regmatch_t pmatch[];
 int eflags;
 {
 	register char *endp;
-	register int i;
+	register unsigned int i;
 	struct match mv;
 	register struct match *m = &mv;
 	register char *dp;
-	const register sopno gf = g->firststate+1;	/* +1 for OEND */
-	const register sopno gl = g->laststate;
+	register const sopno gf = g->firststate+1;	/* +1 for OEND */
+	register const sopno gl = g->laststate;
 	char *start;
 	char *stop;
 
@@ -613,7 +615,7 @@ sopno lev;			/* PLUS nesting level */
 	/* "can't happen" */
 	assert(nope);
 	/* NOTREACHED */
-	return((char *)NULL);	/* dummy */
+	return( NULL );
 }
 
 /*
@@ -822,7 +824,7 @@ register states aft;		/* states already known reachable after */
 	register sopno pc;
 	register onestate here;		/* note, macros know this name */
 	register sopno look;
-	register long i;
+	register int i;
 
 	for (pc = start, INIT(here, pc); pc != stop; pc++, INC(here)) {
 		s = g->strip[pc];

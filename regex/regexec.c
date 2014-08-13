@@ -4,7 +4,10 @@
  * This file includes engine.c *twice*, after muchos fiddling with the
  * macros that code uses.  This lets the same code operate on two different
  * representations for state sets.
+ *
+ * $Id: regexec.c,v 1.5 1998/12/28 09:44:02 sas Exp $ 
  */
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,22 +19,24 @@
 #include "utils.h"
 #include "regex2.h"
 
+#ifndef NDEBUG
 static int nope = 0;		/* for use in asserts; shuts lint up */
+#endif
 
 /* macros for manipulating states, small version */
-#define	states	unsigned
-#define	states1	unsigned	/* for later use in regexec() decision */
+#define	states	long
+#define	states1	states		/* for later use in regexec() decision */
 #define	CLEAR(v)	((v) = 0)
-#define	SET0(v, n)	((v) &= ~((unsigned)1 << (n)))
-#define	SET1(v, n)	((v) |= (unsigned)1 << (n))
-#define	ISSET(v, n)	((v) & ((unsigned)1 << (n)))
+#define	SET0(v, n)	((v) &= ~(1 << (n)))
+#define	SET1(v, n)	((v) |= 1 << (n))
+#define	ISSET(v, n)	((v) & (1 << (n)))
 #define	ASSIGN(d, s)	((d) = (s))
 #define	EQ(a, b)	((a) == (b))
 #define	STATEVARS	int dummy	/* dummy version */
 #define	STATESETUP(m, n)	/* nothing */
 #define	STATETEARDOWN(m)	/* nothing */
 #define	SETUP(v)	((v) = 0)
-#define	onestate	unsigned
+#define	onestate	int
 #define	INIT(o, n)	((o) = (unsigned)1 << (n))
 #define	INC(o)	((o) <<= 1)
 #define	ISSTATEIN(v, o)	((v) & (o))
@@ -96,7 +101,7 @@ static int nope = 0;		/* for use in asserts; shuts lint up */
 
 /*
  - regexec - interface for matching
- = extern int regexec(const regex_t *, const char *, size_t, \
+ = API_EXPORT(int) regexec(const regex_t *, const char *, size_t, \
  =					regmatch_t [], int);
  = #define	REG_NOTBOL	00001
  = #define	REG_NOTEOL	00002
@@ -109,7 +114,7 @@ static int nope = 0;		/* for use in asserts; shuts lint up */
  * when choosing which matcher to call.  Also, by this point the matchers
  * have been prototyped.
  */
-int				/* 0 success, REG_NOMATCH failure */
+API_EXPORT(int)				/* 0 success, REG_NOMATCH failure */
 regexec(preg, string, nmatch, pmatch, eflags)
 const regex_t *preg;
 const char *string;
