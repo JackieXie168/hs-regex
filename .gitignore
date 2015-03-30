@@ -1,3 +1,6 @@
+# Except this file
+!.gitignore
+
 # Object files
 *.o
 *.ko
